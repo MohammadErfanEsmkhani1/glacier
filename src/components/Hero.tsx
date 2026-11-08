@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import { motion } from 'framer-motion'
+import LoopingVideo from './LoopingVideo'
 
 const label: CSSProperties = {
   fontSize: '10.5px', fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase',
@@ -16,8 +17,8 @@ function Social({ path }: { path: string }) {
 
 export default function Hero() {
   return (
-    <section style={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden' }}>
-      <video style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} src="/hero.mp4" autoPlay muted loop playsInline aria-hidden="true" />
+    <section id="home" style={{ position: 'relative', width: '100%', minHeight: '100svh', overflow: 'hidden' }}>
+      <LoopingVideo src="/hero.mp4" />
       {/* Overlays — opacity reduced by 70%, then bumped back up slightly on user request */}
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.20)' }} />
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.26) 0%, transparent 22%, transparent 60%, rgba(0,0,0,0.38) 100%)' }} />
@@ -25,7 +26,7 @@ export default function Hero() {
       <div style={{ position: 'absolute', top: '-14%', left: '50%', transform: 'translateX(-50%)', width: '1000px', height: '720px', background: 'radial-gradient(ellipse at 50% 30%, rgba(14,116,144,0.05) 0%, transparent 68%)', pointerEvents: 'none' }} />
 
       {/* Centered lockup */}
-      <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 24px' }}>
+      <div style={{ position: 'relative', zIndex: 10, minHeight: '100svh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '112px 24px 96px' }}>
         {/* Brand */}
         <motion.div
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1, ease: 'easeOut' }}
@@ -86,10 +87,10 @@ export default function Hero() {
         </div>
 
         {/* Center */}
-        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', ...label, display: 'flex', gap: '5px' }}>
+        <a href="#exhibit" className="hidden md:flex" style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', ...label, gap: '5px' }}>
           <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>Scroll</span>
           <span>To Navigate</span>
-        </div>
+        </a>
 
         {/* Right */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>

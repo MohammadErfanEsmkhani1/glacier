@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 
 function HomeIcon() {
@@ -44,14 +44,36 @@ function TargetIcon() {
 }
 
 const items = [
-  { key: 'home', Icon: HomeIcon },
-  { key: 'tasks', Icon: CheckIcon },
-  { key: 'calendar', Icon: CalendarIcon },
-  { key: 'goals', Icon: TargetIcon },
+  { key: 'home', label: 'Home', Icon: HomeIcon },
+  { key: 'exhibit', label: 'The exhibit', Icon: CheckIcon },
+  { key: 'visit', label: 'Plan your visit', Icon: CalendarIcon },
+  { key: 'mission', label: 'Our mission', Icon: TargetIcon },
 ]
 
 export default function Navbar() {
   const [active, setActive] = useState('home')
+
+  useEffect(() => {
+    const sections = items
+      .map(({ key }) => document.getElementById(key))
+      .filter((el): el is HTMLElement => el !== null)
+
+    // A thin band across the middle of the viewport decides which section is "current".
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const hit = entries.find((entry) => entry.isIntersecting)
+        if (hit) setActive(hit.target.id)
+      },
+      { rootMargin: '-45% 0px -54% 0px' },
+    )
+    sections.forEach((section) => observer.observe(section))
+    return () => observer.disconnect()
+  }, [])
+
+  const goTo = (key: string) => {
+    setActive(key)
+    document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   return (
     <div style={{ position: 'fixed', top: '26px', left: 0, right: 0, zIndex: 50, display: 'flex', justifyContent: 'center', padding: '0 20px' }}>
@@ -68,14 +90,15 @@ export default function Navbar() {
           boxShadow: '0 12px 44px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.16)',
         }}
       >
-        {items.map(({ key, Icon }) => {
+        {items.map(({ key, label, Icon }) => {
           const isActive = active === key
           return (
             <button
               key={key}
               type="button"
-              onClick={() => setActive(key)}
-              aria-label={key}
+              onClick={() => goTo(key)}
+              aria-label={label}
+              title={label}
               aria-current={isActive ? 'page' : undefined}
               style={{
                 position: 'relative', width: '58px', height: '30px', borderRadius: '999px',
