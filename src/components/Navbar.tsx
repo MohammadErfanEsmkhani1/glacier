@@ -53,27 +53,72 @@ const items = [
 export default function Navbar() {
   const [active, setActive] = useState('home')
 
+
   useEffect(() => {
     const sections = items
       .map(({ key }) => document.getElementById(key))
       .filter((el): el is HTMLElement => el !== null)
 
-    // A thin band across the middle of the viewport decides which section is "current".
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const hit = entries.find((entry) => entry.isIntersecting)
-        if (hit) setActive(hit.target.id)
-      },
-      { rootMargin: '-45% 0px -54% 0px' },
-    )
-    sections.forEach((section) => observer.observe(section))
-    return () => observer.disconnect()
+    let frame = 0
+
+    const updateActive = () => {
+      if (frame) cancelAnimationFrame(frame)
+
+      frame = requestAnimationFrame(() => {
+        const marker = window.innerHeight * 0.45
+
+        const current = sections.reduce<HTMLElement | null>(
+          (closest, section) => {
+            if (!closest) return section
+
+            const rect = section.getBoundingClientRect()
+            const closestRect = closest.getBoundingClientRect()
+
+            const distance =
+              marker < rect.top
+                ? rect.top - marker
+                : marker > rect.bottom
+                  ? marker - rect.bottom
+                  : 0
+
+            const closestDistance =
+              marker < closestRect.top
+                ? closestRect.top - marker
+                : marker > closestRect.bottom
+                  ? marker - closestRect.bottom
+                  : 0
+
+            return distance < closestDistance ? section : closest
+          },
+          null,
+        )
+
+        if (current) setActive(current.id)
+      })
+    }
+
+    updateActive()
+
+    window.addEventListener('scroll', updateActive, {
+      passive: true,
+    })
+    window.addEventListener('resize', updateActive)
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame)
+
+      window.removeEventListener('scroll', updateActive)
+      window.removeEventListener('resize', updateActive)
+    }
   }, [])
 
   const goTo = (key: string) => {
-    setActive(key)
-    document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    document.getElementById(key)?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
   }
+
 
   return (
     <div style={{ position: 'fixed', top: '26px', left: 0, right: 0, zIndex: 50, display: 'flex', justifyContent: 'center', padding: '0 20px' }}>
