@@ -4,55 +4,46 @@ import { motion } from 'framer-motion'
 function HomeIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M11.3 4.6 L4.7 10.1 c-.44.37-.7.92-.7 1.5 V19 a1.6 1.6 0 001.6 1.6 H9 v-4.4 a3 3 0 016 0 V20.6 h3.4 A1.6 1.6 0 0020 19 v-7.4 c0-.58-.26-1.13-.7-1.5 L12.7 4.6 a1.1 1.1 0 00-1.4 0 Z" fill="currentColor" />
+      <path d="M11.3 4.6 L4.7 10.1 c-.44.37-.7.92-.7 1.5 V19 a1.6 1.6 0 001.6 1.6 H9v-4.4a3 3 0 016 0v4.4h3.4A1.6 1.6 0 0020 19v-7.4c0-.58-.26-1.13-.7-1.5L12.7 4.6a1.1 1.1 0 00-1.4 0Z" fill="currentColor" />
     </svg>
   )
 }
 
-function CheckIcon() {
+function FilmIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <circle cx="12" cy="12" r="8.4" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M8.5 12.2 L11 14.7 L15.6 9.7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="3" y="4" width="18" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M7 4v16M17 4v16M3 9h4m-4 6h4m10-6h4m-4 6h4" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   )
 }
 
-function CalendarIcon() {
+function BookmarkIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <rect x="4" y="5.5" width="16" height="15" rx="2.6" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M4 9.6 H20" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M8.5 3.6 V6.4 M15.5 3.6 V6.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <g fill="currentColor">
-        <circle cx="8.4" cy="13" r="0.9" /><circle cx="12" cy="13" r="0.9" /><circle cx="15.6" cy="13" r="0.9" />
-        <circle cx="8.4" cy="16.6" r="0.9" /><circle cx="12" cy="16.6" r="0.9" /><circle cx="15.6" cy="16.6" r="0.9" />
-      </g>
+      <path d="M6 4.8A1.8 1.8 0 017.8 3h8.4A1.8 1.8 0 0118 4.8V21l-6-3.8L6 21V4.8Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
     </svg>
   )
 }
 
-function TargetIcon() {
+function InfoIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <circle cx="11" cy="13" r="7.4" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="11" cy="13" r="3.3" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M11 13 L19 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M15.5 5 H19 V8.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M12 11v5m0-8h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   )
 }
 
 const items = [
   { key: 'home', label: 'Home', Icon: HomeIcon },
-  { key: 'exhibit', label: 'The exhibit', Icon: CheckIcon },
-  { key: 'visit', label: 'Plan your visit', Icon: CalendarIcon },
-  { key: 'mission', label: 'Our mission', Icon: TargetIcon },
+  { key: 'exhibit', label: 'Discover', Icon: FilmIcon },
+  { key: 'visit', label: 'My movies', Icon: BookmarkIcon },
+  { key: 'mission', label: 'About Glacier', Icon: InfoIcon },
 ]
 
 export default function Navbar() {
   const [active, setActive] = useState('home')
-
 
   useEffect(() => {
     const sections = items
@@ -63,77 +54,43 @@ export default function Navbar() {
 
     const updateActive = () => {
       if (frame) cancelAnimationFrame(frame)
-
       frame = requestAnimationFrame(() => {
         const marker = window.innerHeight * 0.45
-
-        const current = sections.reduce<HTMLElement | null>(
-          (closest, section) => {
-            if (!closest) return section
-
-            const rect = section.getBoundingClientRect()
-            const closestRect = closest.getBoundingClientRect()
-
-            const distance =
-              marker < rect.top
-                ? rect.top - marker
-                : marker > rect.bottom
-                  ? marker - rect.bottom
-                  : 0
-
-            const closestDistance =
-              marker < closestRect.top
-                ? closestRect.top - marker
-                : marker > closestRect.bottom
-                  ? marker - closestRect.bottom
-                  : 0
-
-            return distance < closestDistance ? section : closest
-          },
-          null,
-        )
-
+        const current = sections.reduce<HTMLElement | null>((closest, section) => {
+          if (!closest) return section
+          const rect = section.getBoundingClientRect()
+          const closestRect = closest.getBoundingClientRect()
+          const distance = marker < rect.top ? rect.top - marker : marker > rect.bottom ? marker - rect.bottom : 0
+          const closestDistance = marker < closestRect.top ? closestRect.top - marker : marker > closestRect.bottom ? marker - closestRect.bottom : 0
+          return distance < closestDistance ? section : closest
+        }, null)
         if (current) setActive(current.id)
       })
     }
 
     updateActive()
-
-    window.addEventListener('scroll', updateActive, {
-      passive: true,
-    })
+    window.addEventListener('scroll', updateActive, { passive: true })
     window.addEventListener('resize', updateActive)
 
     return () => {
       if (frame) cancelAnimationFrame(frame)
-
       window.removeEventListener('scroll', updateActive)
       window.removeEventListener('resize', updateActive)
     }
   }, [])
 
   const goTo = (key: string) => {
-    document.getElementById(key)?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-    })
+    document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-
   return (
-    <div style={{ position: 'fixed', top: '26px', left: 0, right: 0, zIndex: 50, display: 'flex', justifyContent: 'center', padding: '0 20px' }}>
+    <div className="fixed left-0 right-0 top-5 z-50 flex justify-center px-4">
       <motion.nav
-        aria-label="Primary"
-        initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: 'easeOut' }}
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 10px',
-          borderRadius: '999px',
-          background: 'rgba(255,255,255,0.07)',
-          border: '1px solid rgba(255,255,255,0.14)',
-          backdropFilter: 'blur(22px)',
-          WebkitBackdropFilter: 'blur(22px)',
-          boxShadow: '0 12px 44px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.16)',
-        }}
+        aria-label="Primary navigation"
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#111a2b]/85 p-1.5 shadow-[0_12px_44px_rgba(0,0,0,.38)] backdrop-blur-xl"
       >
         {items.map(({ key, label, Icon }) => {
           const isActive = active === key
@@ -144,25 +101,17 @@ export default function Navbar() {
               onClick={() => goTo(key)}
               aria-label={label}
               title={label}
-              aria-current={isActive ? 'page' : undefined}
-              style={{
-                position: 'relative', width: '58px', height: '30px', borderRadius: '999px',
-                border: 'none', background: 'transparent', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: isActive ? '#fff' : 'rgba(255,255,255,0.62)',
-                transition: 'color 0.2s ease',
-              }}
-              onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.85)' }}
-              onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.62)' }}
+              aria-current={isActive ? 'location' : undefined}
+              className={`glacier-focus relative flex h-10 w-11 items-center justify-center rounded-full transition-colors sm:w-12 ${isActive ? 'text-white' : 'text-slate-400 hover:text-white'}`}
             >
               {isActive && (
                 <motion.span
                   layoutId="dock-active"
-                  style={{ position: 'absolute', inset: 0, borderRadius: '999px', background: 'rgba(0,0,0,0.34)', border: '1px solid rgba(255,255,255,0.07)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)' }}
+                  className="absolute inset-0 rounded-full border border-violet-200/15 bg-[#9270ff]/25"
                   transition={{ type: 'spring', stiffness: 420, damping: 36 }}
                 />
               )}
-              <span style={{ position: 'relative', zIndex: 1, display: 'flex' }}><Icon /></span>
+              <span className="relative z-10"><Icon /></span>
             </button>
           )
         })}
