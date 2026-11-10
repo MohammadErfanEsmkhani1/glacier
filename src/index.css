@@ -3,22 +3,72 @@
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-serif: 'Playfair Display', Georgia, serif;
+  --color-glacier-bg: #0b1020;
+  --color-glacier-surface: #151d31;
+  --color-glacier-violet: #9270ff;
+  --color-glacier-cyan: #62d6e8;
+  --color-glacier-gold: #f2bd72;
 }
 
 @layer base {
   *, *::before, *::after {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
   }
-  html { scroll-behavior: smooth; }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
+    background: #0b1020;
+  }
+
   body {
-    font-family: 'Inter', sans-serif;
-    background: #000;
-    color: #fff;
+    margin: 0;
+    min-width: 320px;
     overflow-x: hidden;
+    background: #0b1020;
+    color: #edf1fb;
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  #root { width: 100%; min-height: 100svh; }
+
+  button, input {
+    font: inherit;
+  }
+
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    color: #fff;
+    background: rgba(146, 112, 255, 0.55);
+  }
+
+  #root {
+    width: 100%;
+    min-height: 100svh;
+  }
+}
+
+@layer utilities {
+  .glacier-container {
+    width: min(100% - 3rem, 1180px);
+    margin-inline: auto;
+  }
+
+  .glacier-panel {
+    border: 1px solid rgba(190, 205, 235, 0.12);
+    background: rgba(21, 29, 49, 0.78);
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.18);
+  }
+
+  .glacier-accent-text {
+    color: #a995ff;
+  }
+
+  .glacier-focus:focus-visible {
+    outline: 2px solid #62d6e8;
+    outline-offset: 4px;
+  }
 }
