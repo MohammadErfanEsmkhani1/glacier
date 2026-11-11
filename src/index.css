@@ -78,7 +78,8 @@
 .appearance-header { top: 1.25rem; right: 1rem; pointer-events:none; }
 .appearance-header > * { pointer-events:auto; }
 @media (max-width: 520px) {
-  .appearance-header { top: .75rem; right: .65rem; gap:.35rem; }
+  /* Keep the left/right header controls on a separate row below the centered dock. */
+  .appearance-header { top: 5rem; right: .65rem; gap:.35rem; }
   .theme-control { padding: .35rem .5rem; gap: .35rem; }
 }
 
