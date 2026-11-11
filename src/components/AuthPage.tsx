@@ -1,0 +1,14 @@
+import { useState } from 'react'
+type Props={initialMode:'login'|'register';onNavigate:(path:string)=>void}
+export default function AuthPage({initialMode,onNavigate}:Props) {
+ const [mode,setMode]=useState(initialMode);const [email,setEmail]=useState('');const [password,setPassword]=useState('');const [notice,setNotice]=useState('')
+ const submit=(event:React.FormEvent<HTMLFormElement>)=>{event.preventDefault();setNotice('Account services are not connected yet. Supabase setup is the next step; your details have not been sent or saved.')}
+ return <main className="flex min-h-screen items-center justify-center px-5 pb-16 pt-32"><section className="w-full max-w-md rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-7 shadow-2xl sm:p-9">
+ <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">Welcome to Glacier</p><h1 className="mt-4 font-serif text-4xl text-[var(--text)]">{mode==='login'?'Welcome back.':'Create your account.'}</h1><p className="mt-3 text-sm leading-6 text-[var(--muted)]">{mode==='login'?'Sign in to continue exploring.':'Join Glacier with your email address.'} Email verification will be required for new accounts.</p>
+ <form onSubmit={submit} className="mt-8 space-y-4"><label className="block text-xs font-medium text-[var(--muted)]">Email address<input required type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[var(--page)] px-4 py-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]" placeholder="you@example.com"/></label>
+ <label className="block text-xs font-medium text-[var(--muted)]">Password<input required type="password" minLength={8} autoComplete={mode==='login'?'current-password':'new-password'} value={password} onChange={e=>setPassword(e.target.value)} className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[var(--page)] px-4 py-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]" placeholder="At least 8 characters"/></label>
+ <button type="submit" className="w-full rounded-full bg-[var(--accent)] px-5 py-3.5 text-sm font-semibold text-[#101628] transition hover:brightness-110">{mode==='login'?'Sign in':'Create account'}</button></form>
+ {notice&&<p role="status" className="mt-4 rounded-xl border border-[var(--line)] p-3 text-xs leading-5 text-[var(--muted)]">{notice}</p>}
+ <p className="mt-6 text-center text-sm text-[var(--muted)]">{mode==='login'?"Don't have an account?":'Already registered?'} <button type="button" onClick={()=>{setMode(mode==='login'?'register':'login');setNotice('')}} className="font-semibold text-[var(--accent)] hover:underline">{mode==='login'?'Create one':'Sign in'}</button></p>
+ <button type="button" onClick={()=>onNavigate('/')} className="mt-6 w-full text-center text-xs text-[var(--muted)] hover:text-[var(--text)]">Back to Glacier</button></section></main>
+}
