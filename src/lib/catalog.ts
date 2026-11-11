@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { isSupabaseConfigured, supabase } from './supabase'
 
 export type CatalogKind = 'movie' | 'series'
 export type CatalogTitle = {
@@ -12,35 +13,62 @@ export type CatalogTitle = {
   featured: boolean
 }
 
-export const starterTitles: CatalogTitle[] = [
-  { id: 'dune-part-two', title: 'Dune: Part Two', kind: 'movie', year: 2024, genre: 'Sci-fi · Adventure', description: 'A sweeping journey across a distant desert world.', poster_url: null, featured: true },
-  { id: 'interstellar', title: 'Interstellar', kind: 'movie', year: 2014, genre: 'Sci-fi · Drama', description: 'An emotional voyage through space and time.', poster_url: null, featured: true },
-  { id: 'the-batman', title: 'The Batman', kind: 'movie', year: 2022, genre: 'Crime · Thriller', description: 'A dark mystery unfolds in a rain-soaked city.', poster_url: null, featured: false },
-  { id: 'arcane', title: 'Arcane', kind: 'series', year: 2021, genre: 'Animation · Fantasy', description: 'Two sisters find themselves on opposite sides of a city.', poster_url: null, featured: true },
-  { id: 'severance', title: 'Severance', kind: 'series', year: 2022, genre: 'Mystery · Sci-fi', description: 'A strange workplace raises even stranger questions.', poster_url: null, featured: true },
-  { id: 'the-bear', title: 'The Bear', kind: 'series', year: 2022, genre: 'Drama · Comedy', description: 'A young chef returns home to transform a family restaurant.', poster_url: null, featured: false },
-]
+export const starterTitles: CatalogTitle[] = []
 
-const STORAGE_KEY = 'glacier-catalogue'
-export function readCatalog(): CatalogTitle[] {
+function readLocalCatalog(): CatalogTitle[] {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (!saved) return starterTitles
-    const parsed: unknown = JSON.parse(saved)
-    return Array.isArray(parsed) ? parsed as CatalogTitle[] : starterTitles
-  } catch { return starterTitles }
+    const saved = localStorage.getItem('glacier-catalogue')
+    const parsed: unknown = saved ? JSON.parse(saved) : []
+    return Array.isArray(parsed) ? parsed as CatalogTitle[] : []
+  } catch { return [] }
 }
+
+export function readCatalog(): CatalogTitle[] {
+  return readLocalCatalog()
+}
+
 export function saveCatalog(titles: CatalogTitle[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(titles))
+  localStorage.setItem('glacier-catalogue', JSON.stringify(titles))
   window.dispatchEvent(new Event('glacier:catalogue-updated'))
 }
+
 export function useCatalog() {
-  const [titles, setTitles] = useState<CatalogTitle[]>(() => readCatalog())
+  const [titles, setTitles] = useState<CatalogTitle[]>(() => readLocalCatalog())
+
   useEffect(() => {
-    const refresh = () => setTitles(readCatalog())
+    let active = true
+    const load = async () => {
+      if (!isSupabaseConfigured || !supabase) {
+        if (active) setTitles(readLocalCatalog())
+        return
+      }
+      const { data, error } = await supabase
+        .from('titles')
+        .select('id,title,kind,release_year,genre,description,poster_url,featured')
+        .order('sort_order', { ascending: true })
+        .order('title', { ascending: true })
+      if (!active) return
+      if (error) {
+        console.error('Glacier catalogue could not be loaded:', error.message)
+        return
+      }
+      setTitles((data ?? []).map((item) => ({
+        id: item.id,
+        title: item.title,
+        kind: item.kind,
+        year: item.release_year ?? 0,
+        genre: item.genre,
+        description: item.description,
+        poster_url: item.poster_url,
+        featured: item.featured,
+      })))
+    }
+    void load()
+    const refresh = () => { void load() }
     window.addEventListener('glacier:catalogue-updated', refresh)
     window.addEventListener('storage', refresh)
     return () => {
+      active = false
       window.removeEventListener('glacier:catalogue-updated', refresh)
       window.removeEventListener('storage', refresh)
     }
