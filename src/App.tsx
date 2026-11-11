@@ -18,24 +18,56 @@ const specialPaths = ['/categories', '/login', '/register', '/admin']
 
 function AdminRoute() {
   const [status, setStatus] = useState<'checking' | 'allowed' | 'denied' | 'unconfigured'>('checking')
+  const [diagnostic, setDiagnostic] = useState('')
 
   useEffect(() => {
     let active = true
-    const checkAdmin = async () => {
-      if (!isSupabaseConfigured || !supabase) {
-        if (active) setStatus('unconfigured')
-        return
-      }
-      const { data: { session } } = await supabase.auth.getSession()
+    const verifySession = async (session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session']) => {
       if (!session) {
-        if (active) setStatus('denied')
+        if (active) {
+          setDiagnostic('No active Supabase session was found in this browser.')
+          setStatus('denied')
+        }
         return
       }
       const { data, error } = await supabase.rpc('is_glacier_admin')
-      if (active) setStatus(!error && data === true ? 'allowed' : 'denied')
+      if (!active) return
+      if (error) {
+        setDiagnostic(`Supabase RPC error: ${error.message} (code: ${error.code ?? 'unknown'})`)
+        setStatus('denied')
+      } else if (data !== true) {
+        setDiagnostic(`The is_glacier_admin() function returned ${String(data)} for the signed-in account (user ID: ${session.user.id}).`)
+        setStatus('denied')
+      } else {
+        setDiagnostic('')
+        setStatus('allowed')
+      }
     }
+
+    const checkAdmin = async () => {
+      if (!isSupabaseConfigured || !supabase) {
+        if (active) {
+          setDiagnostic('VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY is missing.')
+          setStatus('unconfigured')
+        }
+        return
+      }
+      const { data, error } = await supabase.auth.getSession()
+      if (!active) return
+      if (error) {
+        setDiagnostic(`Could not read the Supabase session: ${error.message}`)
+        setStatus('denied')
+        return
+      }
+      await verifySession(data.session)
+    }
+
     void checkAdmin()
-    const subscription = supabase?.auth.onAuthStateChange(() => { void checkAdmin() }).data.subscription
+    const subscription = supabase?.auth.onAuthStateChange((_event, session) => {
+      // Run after the auth callback returns; Supabase advises against awaiting
+      // further Supabase calls inside onAuthStateChange.
+      Promise.resolve().then(() => verifySession(session))
+    }).data.subscription
     return () => {
       active = false
       subscription?.unsubscribe()
@@ -43,8 +75,8 @@ function AdminRoute() {
   }, [])
 
   if (status === 'checking') return <main className="flex min-h-screen items-center justify-center px-6 pt-32 text-sm text-[var(--muted)]">Checking administrator access…</main>
-  if (status === 'unconfigured') return <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 pt-32 text-center"><h1 className="font-serif text-4xl text-[var(--text)]">Backend not configured</h1><p className="mt-4 text-sm leading-6 text-[var(--muted)]">Supabase connection details are missing from this deployment. Add the Vercel environment variables and redeploy.</p></main>
-  if (status === 'denied') return <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 pt-32 text-center"><h1 className="font-serif text-4xl text-[var(--text)]">Administrator access required</h1><p className="mt-4 text-sm leading-6 text-[var(--muted)]">Sign in with the account assigned as Glacier's administrator. If this is your first setup, we still need to assign your account in Supabase.</p><a href="/login?returnTo=%2Fadmin" className="mt-6 rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[#101628]">Go to sign in</a></main>
+  if (status === 'unconfigured') return <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 pt-32 text-center"><h1 className="font-serif text-4xl text-[var(--text)]">Backend not configured</h1><p className="mt-4 text-sm leading-6 text-[var(--muted)]">Supabase connection details are missing from this deployment. Add the Vercel environment variables and redeploy.</p><p className="mt-4 break-words text-left text-xs text-[var(--muted)]">{diagnostic}</p></main>
+  if (status === 'denied') return <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 pt-32 text-center"><h1 className="font-serif text-4xl text-[var(--text)]">Administrator access required</h1><p className="mt-4 text-sm leading-6 text-[var(--muted)]">Temporary diagnostic details to help identify the permission-check problem:</p><p role="alert" className="mt-3 w-full break-words rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-left text-xs leading-5 text-[var(--text)]">{diagnostic || 'No diagnostic details were returned.'}</p><a href="/login?returnTo=%2Fadmin" className="mt-6 rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[#101628]">Go to sign in</a></main>
   return <AdminPage />
 }
 
