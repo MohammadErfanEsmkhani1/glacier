@@ -83,6 +83,17 @@ export default function Navbar() {
   }, [])
 
   const goTo = (key: string) => {
+    if (window.location.pathname !== '/') {
+      const destinations: Record<string, string> = {
+        home: '/',
+        exhibit: '/categories',
+        visit: '/login',
+        mission: '/#mission',
+      }
+      window.location.href = destinations[key] ?? '/'
+      return
+    }
+
     const section = document.getElementById(key)
     if (!section) return
 
