@@ -21,7 +21,6 @@ export default function Hero() {
         <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.42, ease: 'easeOut' }} className="mt-7 max-w-2xl font-serif text-base italic leading-relaxed text-white/90 drop-shadow-[0_1px_18px_rgba(0,0,0,.55)] md:text-lg">{copy.description}</motion.p>
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.58, ease: 'easeOut' }} className="mt-10 flex flex-wrap items-center justify-center gap-3">
           <a href="/categories" className="hero-primary-cta glacier-focus inline-flex items-center rounded-full px-6 py-3.5 text-sm font-semibold text-[#111628] transition duration-200 hover:-translate-y-0.5">Explore categories</a>
-          <a href="#visit" className="glacier-focus inline-flex items-center rounded-full border border-white/35 bg-white/[0.07] px-6 py-3.5 text-sm font-medium text-white backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-[var(--accent)] hover:bg-white/[0.13]">My account</a>
         </motion.div>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.82 }} className="mt-12 text-[10px] font-medium uppercase tracking-[0.22em] text-white/65">A little less scrolling. A lot more discovering.</motion.p>
       </div>
