@@ -121,7 +121,7 @@ function App() {
   return (
     <div className={isSpecialPage ? 'app-shell min-h-screen' : 'site-home min-h-screen'}>
       {path === '/' && <Navbar />}
-      <SiteHeader mode={mode} onToggleMode={onToggleMode} />
+      {path !== '/admin' && <SiteHeader mode={mode} onToggleMode={onToggleMode} />}
       {path === '/categories' && <CategoryPage />}
       {(path === '/login' || path === '/register') && <AuthPage key={path} initialMode={path === '/register' ? 'register' : 'login'} />}
       {path === '/admin' && <AdminRoute />}
