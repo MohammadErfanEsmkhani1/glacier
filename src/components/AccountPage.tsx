@@ -73,8 +73,7 @@ export default function AccountPage() {
       <div className="mx-auto max-w-6xl">
         <motion.header initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">Your own little corner of Glacier</p>
-          <h1 className="mt-5 font-serif text-5xl leading-tight text-[var(--text)] sm:text-6xl">{'Welcome back' + (emailName ? ', ' + emailName : '') + '.'}</h1>
-          <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-[var(--muted)]">A good story is even better when you can find it again. Here are the movies and series you have kept close.</p>
+          <h1 className="mt-3 whitespace-nowrap font-serif text-4xl leading-tight text-[var(--text)] sm:text-5xl">{'Welcome back' + (emailName ? ', ' + emailName : '')}</h1>
         </motion.header>
 
         <section aria-labelledby="account-favorites-heading" className="mt-16">
@@ -123,7 +122,7 @@ export default function AccountPage() {
               <h2 id="account-signout-heading" className="mt-2 font-serif text-2xl text-[var(--text)]">Until next time.</h2>
               <p className="mt-2 text-sm leading-6 text-[var(--muted)]">You can sign out safely. Your saved favorites will be here when you return.</p>
             </div>
-            <button type="button" onClick={() => void logOut()} disabled={signingOut} className="glacier-focus inline-flex shrink-0 items-center justify-center rounded-full border border-[var(--line)] px-6 py-3 text-sm font-semibold text-[var(--text)] transition hover:border-[var(--accent)] hover:bg-[var(--page)] disabled:cursor-not-allowed disabled:opacity-60">{signingOut ? 'Signing out…' : 'Log out'}</button>
+            <button type="button" onClick={() => void logOut()} disabled={signingOut} className="glacier-focus inline-flex min-h-12 shrink-0 items-center justify-center rounded-full border border-red-400/50 bg-red-500 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-red-950/20 transition hover:-translate-y-0.5 hover:bg-red-600 hover:shadow-red-950/30 disabled:cursor-not-allowed disabled:opacity-60">{signingOut ? 'Signing out…' : 'Log out'}</button>
           </div>
           {signOutError && <p role="alert" className="mt-3 text-right text-xs text-[var(--muted)]">{signOutError}</p>}
         </section>
