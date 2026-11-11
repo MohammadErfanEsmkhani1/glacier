@@ -12,7 +12,7 @@ export default function Visit() {
   useEffect(() => {
     if (!supabase) return
     let active = true
-    const updateSession = (session: { user: { email?: string } } | null) => {
+    const updateSession = (session: { user: { email?: string | null } } | null) => {
       if (!active) return
       setSignedIn(Boolean(session))
       setEmailName(session?.user.email?.split('@')[0] ?? '')
