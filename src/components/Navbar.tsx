@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { supabase } from '../lib/supabase'
 
 function HomeIcon() {
   return (
@@ -42,8 +43,22 @@ const items = [
   { key: 'mission', label: 'About Glacier', Icon: InfoIcon },
 ]
 
-export default function Navbar() {
+type NavbarProps = { mode: 'dark' | 'light'; onToggleMode: () => void }
+
+export default function Navbar({ mode, onToggleMode }: NavbarProps) {
   const [active, setActive] = useState('home')
+  const [signedIn, setSignedIn] = useState(false)
+
+  useEffect(() => {
+    if (!supabase) return
+    let mounted = true
+    const syncSession = (session: { user: { id: string } } | null) => {
+      if (mounted) setSignedIn(Boolean(session))
+    }
+    void supabase.auth.getSession().then(({ data }) => syncSession(data.session))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => syncSession(session))
+    return () => { mounted = false; subscription.unsubscribe() }
+  }, [])
 
   useEffect(() => {
     const sections = items
@@ -105,7 +120,21 @@ export default function Navbar() {
   }
 
   return (
-    <div className="pointer-events-none fixed left-0 right-0 top-5 z-50 flex justify-center px-4">
+    <>
+      <header className="appearance-header fixed left-4 right-4 top-5 z-50 flex items-center justify-between gap-2">
+        <a href={signedIn ? '/account' : '/register'} className="account-header-link">
+          <span>{signedIn ? 'Your Account' : 'Sign in / Create account ↗'}</span>
+          <svg className="account-header-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.4 3.2-5.2 7-5.2s6.3 1.8 7 5.2" />
+          </svg>
+        </a>
+        <button type="button" onClick={onToggleMode} aria-pressed={mode === 'light'} className="theme-control" aria-label={mode === 'dark' ? 'Switch to light appearance' : 'Switch to dark appearance'} title={mode === 'dark' ? 'Switch to light appearance' : 'Switch to dark appearance'}>
+          <span className="theme-control-icon" aria-hidden="true">{mode === 'dark' ? '☼' : '☾'}</span>
+          <span className="text-xs font-medium">Dark/Light mode</span>
+          <span className={mode === 'light' ? 'theme-track is-on' : 'theme-track'} aria-hidden="true"><span /></span>
+        </button>
+      </header>
+      <div className="pointer-events-none fixed left-0 right-0 top-5 z-50 flex justify-center px-4">
       <motion.nav
         aria-label="Primary navigation"
         initial={{ opacity: 0, y: -14 }}
@@ -137,6 +166,7 @@ export default function Navbar() {
           )
         })}
       </motion.nav>
-    </div>
+      </div>
+    </>
   )
 }
