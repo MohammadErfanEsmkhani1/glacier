@@ -17,7 +17,7 @@ export default function Exhibit() {
   }), [titles, filter, query])
 
   return (
-    <section id="exhibit" className="scroll-mt-0 px-6 py-24 md:px-10 md:py-32">
+    <section id="exhibit" className="recommendations-atmosphere scroll-mt-0 px-6 py-24 md:px-10 md:py-32">
       <div className="mx-auto max-w-6xl">
         <SectionHeading eyebrow="Explore · selected by Glacier" title={copy.title} intro={copy.description} />
         <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
