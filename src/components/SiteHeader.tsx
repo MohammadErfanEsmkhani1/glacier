@@ -18,7 +18,7 @@ export default function SiteHeader({ mode, onToggleMode }: Props) {
   }, [])
 
   return (
-    <header className="appearance-header fixed right-4 top-5 z-50 flex items-center gap-2">
+    <header className="appearance-header fixed left-4 right-4 top-5 z-50 flex items-center justify-between gap-2">
       <a href={signedIn ? '/#visit' : '/register'} className="account-header-link">
         {signedIn ? 'Your Account' : 'Sign in / Create account ↗'}
       </a>
