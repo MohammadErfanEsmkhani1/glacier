@@ -9,13 +9,14 @@ import SiteFooter from './components/SiteFooter'
 import SiteHeader from './components/SiteHeader'
 import CategoryPage from './components/CategoryPage'
 import AuthPage from './components/AuthPage'
+import AccountPage from './components/AccountPage'
 import AdminPage from './components/AdminPage'
 import { applyPalette, defaultSeo, getPalette, readAllSeo } from './lib/siteStorage'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import './index.css'
 
 type Mode = 'dark' | 'light'
-const specialPaths = ['/categories', '/login', '/register', '/admin']
+const specialPaths = ['/categories', '/login', '/register', '/admin', '/account']
 
 function AdminRoute() {
   const [status, setStatus] = useState<'checking' | 'allowed' | 'denied' | 'unconfigured'>('checking')
@@ -124,10 +125,10 @@ function App() {
       {path !== '/admin' && <SiteHeader mode={mode} onToggleMode={onToggleMode} />}
       {path === '/categories' && <CategoryPage />}
       {(path === '/login' || path === '/register') && <AuthPage key={path} initialMode={path === '/register' ? 'register' : 'login'} />}
+      {path === '/account' && <AccountPage />}
       {path === '/admin' && <AdminRoute />}
       {!isSpecialPage && <main><Hero /><Exhibit /><Visit /><Mission /></main>}
       <SiteFooter />
     </div>
   )
 }
-export default App
