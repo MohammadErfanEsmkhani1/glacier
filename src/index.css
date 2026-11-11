@@ -121,3 +121,31 @@
   background: radial-gradient(ellipse at 50% 44%, color-mix(in srgb,var(--hero-tint) 22%,transparent), transparent 68%);
   mix-blend-mode: screen;
 }
+
+
+/* Soft, atmospheric haze shared by recommendations and the favorites feature card. */
+.site-home #exhibit.recommendations-atmosphere {
+  background:
+    radial-gradient(ellipse at 14% 18%, rgba(120,216,206,.11), transparent 42%),
+    radial-gradient(ellipse at 84% 72%, rgba(162,141,255,.10), transparent 44%),
+    var(--section);
+}
+.favorites-feature-card {
+  background:
+    radial-gradient(ellipse at 8% 0%, rgba(120,216,206,.13), transparent 48%),
+    radial-gradient(ellipse at 100% 100%, rgba(162,141,255,.11), transparent 46%),
+    var(--surface);
+}
+.account-header-link {
+  display:inline-flex; align-items:center; justify-content:center; white-space:nowrap;
+  border:1px solid var(--line); border-radius:999px; background:var(--surface);
+  color:var(--text); padding:.58rem .9rem; font-size:.72rem; font-weight:600;
+  transition:transform .2s ease,border-color .2s ease,background .2s ease;
+}
+.account-header-link:hover { transform:translateY(-1px); border-color:var(--accent); }
+@media (max-width: 520px) {
+  .appearance-header { top: .75rem; right: .65rem; gap:.35rem; }
+  .account-header-link { padding:.48rem .62rem; font-size:.62rem; }
+  .theme-control { padding:.35rem .45rem; gap:.3rem; }
+  .theme-control .text-xs { font-size:.62rem; }
+}
