@@ -4,13 +4,13 @@
   --font-serif: 'Playfair Display', Georgia, serif;
 }
 :root {
-  color-scheme: dark; --page:#0b1626; --surface:#142b3b; --section:#122b39; --text:#edf4f5; --muted:#aabac4; --accent:#a28dff; --line:rgba(170,210,214,.16); --poster-a:#53617a; --poster-b:#18283a; --header-bg:rgba(11,22,38,.92); --footer-bg:#080e18; --hero-gradient-from:#78d8ce; --hero-gradient-mid:#b6a5ff; --hero-gradient-to:#f1bf79;
+  color-scheme: dark; --page:#0b1626; --surface:#142b3b; --section:#122b39; --text:#edf4f5; --muted:#aabac4; --accent:#a28dff; --line:rgba(170,210,214,.16); --poster-a:#53617a; --poster-b:#18283a; --header-bg:rgba(11,22,38,.92); --footer-bg:#080e18; --hero-gradient-from:#78d8ce; --hero-gradient-mid:#b6a5ff; --hero-gradient-to:#f1bf79; --hero-tint:#a28dff;
 }
 :root[data-mode="light"] {
   color-scheme: light; --page:#f3f6f8; --surface:#fff; --section:#e8eff3; --text:#152638; --muted:#5c6d7a; --accent:#6553c8; --line:rgba(21,38,56,.14); --poster-a:#91b7c1; --poster-b:#536b84; --header-bg:rgba(245,248,250,.96); --footer-bg:#e6edf1;
 }
-:root[data-palette="aurora"] { --hero-gradient-from:#78d8ce; --hero-gradient-mid:#d7f5ee; --hero-gradient-to:#a9b9ff; --page:#101d2a; --surface:#1b3b43; --section:#17333d; --accent:#78d8ce; --line:rgba(120,216,206,.2); }
-:root[data-palette="ember"] { --hero-gradient-from:#f1bf79; --hero-gradient-mid:#efa98a; --hero-gradient-to:#d98aa7; --page:#211923; --surface:#3b2936; --section:#30232f; --accent:#f1bf79; --line:rgba(241,191,121,.2); }
+:root[data-palette="aurora"] { --hero-gradient-from:#78d8ce; --hero-gradient-mid:#d7f5ee; --hero-gradient-to:#a9b9ff; --hero-tint:#78d8ce; --page:#101d2a; --surface:#1b3b43; --section:#17333d; --accent:#78d8ce; --line:rgba(120,216,206,.2); }
+:root[data-palette="ember"] { --hero-gradient-from:#f1bf79; --hero-gradient-mid:#efa98a; --hero-gradient-to:#d98aa7; --hero-tint:#f1bf79; --page:#211923; --surface:#3b2936; --section:#30232f; --accent:#f1bf79; --line:rgba(241,191,121,.2); }
 :root[data-mode="light"][data-palette="aurora"] { --page:#f1f7f5; --surface:#fff; --section:#e4efec; --text:#163139; --muted:#607b7b; --accent:#277f78; }
 :root[data-mode="light"][data-palette="ember"] { --page:#faf4ef; --surface:#fff; --section:#f1e7e2; --text:#34252a; --muted:#806b69; --accent:#a25e28; }
 @layer base {
@@ -115,4 +115,9 @@
 }
 .hero-primary-cta:hover {
   filter: brightness(1.12);
+}
+
+.hero-theme-overlay {
+  background: radial-gradient(ellipse at 50% 44%, color-mix(in srgb,var(--hero-tint) 22%,transparent), transparent 68%);
+  mix-blend-mode: screen;
 }
