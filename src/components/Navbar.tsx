@@ -76,8 +76,12 @@ export default function Navbar() {
             </button>
           })}
         </motion.nav>
-        <button type="button" onClick={toggleMode} aria-label={`Switch to ${mode === 'dark' ? 'light' : 'dark'} mode`} title={`Switch to ${mode === 'dark' ? 'light' : 'dark'} mode`}
-          className="glacier-focus h-10 rounded-full border border-white/[0.14] bg-white/[0.075] px-3 text-xs font-medium text-white/85 shadow-lg backdrop-blur-[22px] hover:bg-white/[0.14]">{mode === 'dark' ? 'Light' : 'Dark'}</button>
+        <div className="flex items-center gap-1 rounded-full border border-white/[0.14] bg-white/[0.075] px-2 py-1.5 shadow-lg backdrop-blur-[22px]">
+          <a href="/movies" className="glacier-focus rounded-full px-2 py-2 text-[11px] font-medium text-white/85 hover:bg-white/[0.12]">Movies</a>
+          <a href="/series" className="glacier-focus rounded-full px-2 py-2 text-[11px] font-medium text-white/85 hover:bg-white/[0.12]">Series</a>
+          <button type="button" onClick={toggleMode} aria-label={`Switch to ${mode === 'dark' ? 'light' : 'dark'} mode`} title={`Switch to ${mode === 'dark' ? 'light' : 'dark'} mode`}
+            className="glacier-focus h-10 rounded-full px-3 text-xs font-medium text-white/85 hover:bg-white/[0.14]">{mode === 'dark' ? 'Light' : 'Dark'}</button>
+        </div>
       </div>
     </div>
   )
