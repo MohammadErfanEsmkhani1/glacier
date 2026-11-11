@@ -142,7 +142,7 @@
 .account-header-link:hover { transform:translateY(-1px); border-color:var(--accent); }
 .account-header-icon { flex:none; }
 @media (max-width: 520px) {
-  .appearance-header { top: .75rem; right: .65rem; gap:.35rem; }
+  .appearance-header { top: 5rem; right: .65rem; gap:.35rem; }
   .account-header-link { padding:.48rem .62rem; font-size:.62rem; gap:.35rem; }
   .account-header-icon { width:15px; height:15px; }
   .theme-control { padding:.35rem .45rem; gap:.3rem; }
