@@ -19,7 +19,7 @@ export default function AccountPage() {
       return
     }
     let active = true
-    const syncSession = (session: { user: { email?: string } } | null) => {
+    const syncSession = (session: { user: { email?: string | null } } | null) => {
       if (!active) return
       setSignedIn(Boolean(session))
       setEmailName(session?.user.email?.split('@')[0] ?? '')
