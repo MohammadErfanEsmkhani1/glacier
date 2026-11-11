@@ -1,13 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from './supabase'
 
+type FavoriteChange = { userId: string; titleId: string; saved: boolean }
+const FAVORITES_EVENT = 'glacier:favorites-updated'
+
+function applyFavoriteChange(current: string[], change: FavoriteChange) {
+  if (change.saved) return current.includes(change.titleId) ? current : [...current, change.titleId]
+  return current.filter((id) => id !== change.titleId)
+}
+
 export function useFavorites() {
   const [userId, setUserId] = useState<string | null>(null)
   const [favoriteIds, setFavoriteIds] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  // Ignore responses that finish after the visitor has switched accounts.
   const currentUserId = useRef<string | null>(null)
+  const pendingTitles = useRef(new Set<string>())
 
   const load = useCallback(async (id: string | null) => {
     if (!supabase || !id) {
@@ -39,9 +47,17 @@ export function useFavorites() {
     }
 
     let active = true
+    const onFavoriteChange = (event: Event) => {
+      const change = (event as CustomEvent<FavoriteChange>).detail
+      if (!change || change.userId !== currentUserId.current) return
+      setFavoriteIds((current) => applyFavoriteChange(current, change))
+    }
+    window.addEventListener(FAVORITES_EVENT, onFavoriteChange)
+
     const sync = (id: string | null) => {
       if (!active) return
       currentUserId.current = id
+      pendingTitles.current.clear()
       setUserId(id)
       setFavoriteIds([])
       setError('')
@@ -62,30 +78,40 @@ export function useFavorites() {
     return () => {
       active = false
       currentUserId.current = null
+      window.removeEventListener(FAVORITES_EVENT, onFavoriteChange)
       subscription.unsubscribe()
     }
   }, [load])
 
   const toggleFavorite = useCallback(async (titleId: string) => {
     const id = userId
-    if (!supabase || !id || currentUserId.current !== id) return false
+    if (!supabase || !id || currentUserId.current !== id || pendingTitles.current.has(titleId)) return false
 
+    const shouldSave = !favoriteIds.includes(titleId)
+    const change: FavoriteChange = { userId: id, titleId, saved: shouldSave }
+
+    // Update every mounted favorites view immediately, before waiting for Supabase.
+    pendingTitles.current.add(titleId)
     setError('')
-    const exists = favoriteIds.includes(titleId)
-    const result = exists
-      ? await supabase.from('user_favorites').delete().eq('user_id', id).eq('title_id', titleId)
-      : await supabase.from('user_favorites').insert({ user_id: id, title_id: titleId })
+    setFavoriteIds((current) => applyFavoriteChange(current, change))
+    window.dispatchEvent(new CustomEvent(FAVORITES_EVENT, { detail: change }))
 
-    // Do not let a completed request for an old account alter the new account's UI.
+    const result = shouldSave
+      ? await supabase.from('user_favorites').insert({ user_id: id, title_id: titleId })
+      : await supabase.from('user_favorites').delete().eq('user_id', id).eq('title_id', titleId)
+
+    pendingTitles.current.delete(titleId)
     if (currentUserId.current !== id) return false
+
     if (result.error) {
+      // Roll back the optimistic change if the database did not accept it.
+      const rollback: FavoriteChange = { ...change, saved: !shouldSave }
+      setFavoriteIds((current) => applyFavoriteChange(current, rollback))
+      window.dispatchEvent(new CustomEvent(FAVORITES_EVENT, { detail: rollback }))
       setError(result.error.message)
       return false
     }
 
-    setFavoriteIds((current) => exists
-      ? current.filter((favoriteId) => favoriteId !== titleId)
-      : [...current, titleId])
     return true
   }, [favoriteIds, userId])
 
