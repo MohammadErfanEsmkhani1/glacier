@@ -97,11 +97,9 @@ export default function Navbar() {
     const section = document.getElementById(key)
     if (!section) return
 
-    // Place the selected section just below the fixed glass dock.
-    // This makes the selected section the starting point, with only its
-    // following content below it rather than leaving earlier content in view.
-    const dockClearance = 88
-    const targetTop = section.getBoundingClientRect().top + window.scrollY - dockClearance
+    // Align the selected section itself with the top edge of the viewport.
+    // Do not subtract a navbar offset: that was leaving a strip of the previous section visible.
+    const targetTop = section.getBoundingClientRect().top + window.scrollY
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     window.scrollTo({ top: Math.max(0, targetTop), behavior: reduceMotion ? 'auto' : 'smooth' })
   }
