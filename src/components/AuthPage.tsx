@@ -38,7 +38,11 @@ export default function AuthPage({ initialMode }: Props) {
           password,
         })
         if (authError) throw authError
-        window.location.assign('/')
+        const requestedPath = new URLSearchParams(window.location.search).get('returnTo')
+        const destination = requestedPath && requestedPath.startsWith('/') && !requestedPath.startsWith('//')
+          ? requestedPath
+          : '/'
+        window.location.assign(destination)
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Authentication failed. Please try again.')
