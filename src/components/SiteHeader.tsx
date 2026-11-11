@@ -19,12 +19,12 @@ export default function SiteHeader({ mode, onToggleMode }: Props) {
 
   return (
     <header className="appearance-header fixed left-4 right-4 top-5 z-50 flex items-center justify-between gap-2">
-      <a href={signedIn ? '/#visit' : '/register'} className="account-header-link">
+      <a href={signedIn ? '/account' : '/register'} className="account-header-link">
+        <span>{signedIn ? 'Your Account' : 'Sign in / Create account ↗'}</span>
         <svg className="account-header-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="12" cy="8" r="3.5" />
           <path d="M5 20c.7-3.4 3.2-5.2 7-5.2s6.3 1.8 7 5.2" />
         </svg>
-        <span>{signedIn ? 'Your Account' : 'Sign in / Create account ↗'}</span>
       </a>
       <button type="button" onClick={onToggleMode} aria-pressed={mode === 'light'} className="theme-control" aria-label={mode === 'dark' ? 'Switch to light appearance' : 'Switch to dark appearance'} title={mode === 'dark' ? 'Switch to light appearance' : 'Switch to dark appearance'}>
         <span className="theme-control-icon" aria-hidden="true">{mode === 'dark' ? '☼' : '☾'}</span>
