@@ -178,3 +178,16 @@
 @media (max-width: 520px) {
   .home-header-link { padding:.48rem .62rem; font-size:.62rem; }
 }
+
+/* Keep the Home control exactly centered between the left and right header actions. */
+.home-header-link-centered {
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  z-index:1;
+}
+.home-header-link-centered:hover { transform:translate(-50%,-50%); }
+@media (max-width: 520px) {
+  .home-header-link-centered { top:50%; }
+}
