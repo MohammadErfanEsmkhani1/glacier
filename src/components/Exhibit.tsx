@@ -17,7 +17,7 @@ export default function Exhibit() {
   return (
     <section id="exhibit" className="scroll-mt-0 px-6 py-24 md:px-10 md:py-32">
       <div className="mx-auto max-w-6xl">
-        <SectionHeading eyebrow="Handpicked for your next night in" title={copy.title} intro={copy.description} />
+        <SectionHeading eyebrow="Explore · selected by Glacier" title={copy.title} intro={copy.description} />
         <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2" aria-label="Filter recommendations">
             {([['all', 'Everything'], ['movie', 'Movies'], ['series', 'Series']] as const).map(([value, label]) => (
