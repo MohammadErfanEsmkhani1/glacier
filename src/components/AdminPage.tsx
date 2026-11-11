@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { readCatalog, type CatalogKind, type CatalogTitle } from '../lib/catalog'
+import { type CatalogKind, type CatalogTitle } from '../lib/catalog'
 import { applyPalette, defaultCopy, defaultSeo, getPalette, type PageSeo, type Palette, type SiteCopy } from '../lib/siteStorage'
 
 type AdminTab = 'catalogue' | 'content' | 'seo' | 'appearance'
