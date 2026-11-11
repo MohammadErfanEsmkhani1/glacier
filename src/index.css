@@ -80,3 +80,23 @@
   .appearance-header { top: 5rem; right: .75rem; }
   .theme-control { padding: .35rem .5rem; gap: .35rem; }
 }
+
+/* Homepage sections share a full-viewport baseline while allowing taller content to grow. */
+.site-home #exhibit,
+.site-home #visit,
+.site-home #mission {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+}
+.site-home #exhibit > div,
+.site-home #visit > div,
+.site-home #mission > div {
+  width: 100%;
+}
+.site-home #exhibit,
+.site-home #visit,
+.site-home #mission {
+  padding-top: clamp(4.5rem, 9vh, 7rem);
+  padding-bottom: clamp(4.5rem, 9vh, 7rem);
+}
