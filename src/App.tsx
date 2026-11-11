@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import Exhibit from './components/Exhibit'
 import Visit from './components/Visit'
@@ -17,6 +18,7 @@ const specialPaths = ['/categories', '/login', '/register', '/admin']
 function App() {
   const [path, setPath] = useState(window.location.pathname)
   const [mode, setMode] = useState<Mode>(() => localStorage.getItem('glacier-mode') === 'light' ? 'light' : 'dark')
+
   useEffect(() => {
     document.documentElement.dataset.mode = mode
     localStorage.setItem('glacier-mode', mode)
@@ -52,7 +54,8 @@ function App() {
 
   return (
     <div className={isSpecialPage ? 'app-shell min-h-screen' : 'site-home min-h-screen'}>
-      <SiteHeader path={path} mode={mode} onToggleMode={onToggleMode} />
+      <Navbar />
+      <SiteHeader mode={mode} onToggleMode={onToggleMode} />
       {path === '/categories' && <CategoryPage />}
       {(path === '/login' || path === '/register') && <AuthPage key={path} initialMode={path === '/register' ? 'register' : 'login'} />}
       {path === '/admin' && <AdminPage />}
