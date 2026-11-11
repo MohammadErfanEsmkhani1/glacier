@@ -65,3 +65,11 @@
 .palette-card:hover,.palette-card.is-selected { border-color:var(--accent); }
 .palette-card.is-selected { box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 22%,transparent); }
 @media(max-width:520px) { .site-header > div { flex-wrap:wrap; justify-content:space-between; } .site-header nav { order:3; width:100%; justify-content:center; } .site-nav-link { padding:.5rem .6rem; } }
+
+/* The cinematic hero remains dark, but becomes visibly brighter in light appearance. */
+:root[data-mode="light"] .site-home #home video {
+  filter: brightness(1.22) saturate(.82);
+}
+:root[data-mode="light"] .site-home #home > div[aria-hidden="true"].absolute.inset-0:first-of-type {
+  background-color: rgba(244, 249, 252, .08);
+}
