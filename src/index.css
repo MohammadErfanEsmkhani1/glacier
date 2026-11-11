@@ -162,3 +162,7 @@
     radial-gradient(ellipse at 100% 100%, rgba(162,141,255,.10), transparent 46%),
     var(--surface);
 }
+
+@media (max-width: 760px) {
+  .site-home .appearance-header { top: 5rem; }
+}
