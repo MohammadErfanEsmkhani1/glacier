@@ -67,10 +67,16 @@ export function useCatalog() {
     const refresh = () => { void load() }
     window.addEventListener('glacier:catalogue-updated', refresh)
     window.addEventListener('storage', refresh)
+    // Refresh the same public catalogue when the auth state changes. The
+    // recommendations remain independent of whether a visitor is signed in.
+    const subscription = supabase?.auth.onAuthStateChange(() => {
+      Promise.resolve().then(refresh)
+    }).data.subscription
     return () => {
       active = false
       window.removeEventListener('glacier:catalogue-updated', refresh)
       window.removeEventListener('storage', refresh)
+      subscription?.unsubscribe()
     }
   }, [])
   return titles
