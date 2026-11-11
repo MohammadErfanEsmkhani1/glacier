@@ -8,6 +8,7 @@ export default function AccountPage() {
   const catalog = useCatalog()
   const { favoriteIds, loading: favoritesLoading, error: favoritesError, toggleFavorite } = useFavorites()
   const [checkingSession, setCheckingSession] = useState(true)
+  const [signedIn, setSignedIn] = useState(false)
   const [emailName, setEmailName] = useState('')
   const [signingOut, setSigningOut] = useState(false)
   const [signOutError, setSignOutError] = useState('')
@@ -20,6 +21,7 @@ export default function AccountPage() {
     let active = true
     const syncSession = (session: { user: { email?: string } } | null) => {
       if (!active) return
+      setSignedIn(Boolean(session))
       setEmailName(session?.user.email?.split('@')[0] ?? '')
       setCheckingSession(false)
     }
@@ -50,7 +52,7 @@ export default function AccountPage() {
     return <main className="account-page flex min-h-screen items-center justify-center px-6 pt-32"><p className="text-sm text-[var(--muted)]">Opening your Glacier account…</p></main>
   }
 
-  if (!emailName && !supabase) {
+  if (!signedIn) {
     return (
       <main className="account-page flex min-h-screen items-center justify-center px-5 pb-16 pt-36">
         <section className="account-welcome-card w-full max-w-xl rounded-3xl border border-[var(--line)] p-8 text-center shadow-xl sm:p-12">
