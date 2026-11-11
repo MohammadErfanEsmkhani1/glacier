@@ -57,10 +57,9 @@ export default function Hero() {
         >
           <a
             href="#exhibit"
-            className="glacier-focus inline-flex items-center gap-3 rounded-full bg-[#a28dff] px-6 py-3.5 text-sm font-semibold text-[#111628] shadow-[0_10px_35px_rgba(162,141,255,.28)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#b5a5ff]"
+            className="glacier-focus inline-flex items-center rounded-full bg-[#a28dff] px-6 py-3.5 text-sm font-semibold text-[#111628] shadow-[0_10px_35px_rgba(162,141,255,.28)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#b5a5ff]"
           >
             Explore recommendations
-            <span aria-hidden="true">↗</span>
           </a>
           <a
             href="#visit"
