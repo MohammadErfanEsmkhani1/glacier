@@ -1,101 +1,83 @@
 import { motion } from 'framer-motion'
+import LoopingVideo from './LoopingVideo'
 
 export default function Hero() {
   return (
-    <section
-      id="home"
-      className="relative flex min-h-[92svh] scroll-mt-0 items-center overflow-hidden bg-[#0b1020] px-6 pb-24 pt-32 md:px-10"
-    >
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -right-40 -top-36 h-[34rem] w-[34rem] rounded-full bg-violet-500/15 blur-[110px]" />
-        <div className="absolute -bottom-64 left-[-8rem] h-[34rem] w-[34rem] rounded-full bg-cyan-400/10 blur-[120px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(11,16,32,0.98)_8%,rgba(11,16,32,0.82)_55%,rgba(11,16,32,0.48)_100%)]" />
-        <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,.7) .6px, transparent .6px)', backgroundSize: '18px 18px' }} />
-      </div>
+    <section id="home" className="relative flex min-h-[100svh] w-full flex-col overflow-hidden bg-[#0b1626]">
+      <LoopingVideo src="/hero.mp4" />
 
-      <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-14 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="max-w-2xl">
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55 }}
-            className="mb-7 inline-flex items-center gap-2 rounded-full border border-violet-300/20 bg-violet-300/[0.07] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-violet-200"
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-[#62d6e8]" />
-            Movies · Series · Discovery
-          </motion.div>
+      <div aria-hidden="true" className="absolute inset-0 bg-black/25" />
+      <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,.28)_0%,transparent_24%,transparent_61%,rgba(0,0,0,.48)_100%)]" />
+      <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,.18)_0%,transparent_20%,transparent_80%,rgba(0,0,0,.18)_100%)]" />
+      <div aria-hidden="true" className="pointer-events-none absolute -top-[14%] left-1/2 h-[720px] w-[1000px] -translate-x-1/2 bg-[radial-gradient(ellipse_at_50%_30%,rgba(120,216,206,.10)_0%,transparent_68%)]" />
 
-          <motion.h1
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.08 }}
-            className="max-w-[760px] text-balance text-5xl font-semibold leading-[1.04] tracking-[-0.055em] text-white sm:text-6xl md:text-7xl"
-          >
-            Find a story
-            <span className="block bg-gradient-to-r from-[#b5a2ff] via-[#9b8bff] to-[#62d6e8] bg-clip-text text-transparent">
-              worth staying for.
-            </span>
-          </motion.h1>
+      <div className="relative z-10 flex min-h-[100svh] flex-1 flex-col items-center justify-center px-6 pb-28 pt-32 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.1, ease: 'easeOut' }}
+          className="mb-7 flex flex-col items-center gap-3"
+        >
+          <div className="flex items-center gap-3">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M12 2 L20 9 L12 22 L4 9 Z" stroke="#fff" strokeWidth="1.3" strokeLinejoin="round" />
+              <path d="M4 9 H20 M12 2 V22 M8 9 L12 22 L16 9" stroke="#fff" strokeWidth="0.7" opacity="0.6" />
+            </svg>
+            <span className="pl-[0.28em] font-sans text-sm font-medium uppercase tracking-[0.3em] text-white">Glacier</span>
+          </div>
+          <span className="pl-[0.24em] text-[10px] font-medium uppercase tracking-[0.32em] text-white/75">Movies · Series · Discovery</span>
+        </motion.div>
 
-          <motion.p
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.65, delay: 0.2 }}
-            className="mt-7 max-w-xl text-base leading-8 text-slate-300/80 md:text-lg"
-          >
-            A thoughtful place to discover remarkable movies and series, find your next favourite, and keep track of what you love.
-          </motion.p>
+        <motion.h1
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.85, delay: 0.24, ease: 'easeOut' }}
+          className="max-w-5xl font-serif text-5xl font-normal uppercase leading-[1.02] tracking-[0.015em] text-white drop-shadow-[0_2px_32px_rgba(0,0,0,.45)] sm:text-6xl md:text-7xl lg:text-8xl"
+        >
+          Find a story
+          <span className="mt-2 block bg-gradient-to-r from-[#78d8ce] via-[#b6a5ff] to-[#f1bf79] bg-clip-text font-semibold text-transparent">
+            worth staying for.
+          </span>
+        </motion.h1>
 
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.32 }}
-            className="mt-10 flex flex-wrap items-center gap-4"
-          >
-            <a
-              href="#exhibit"
-              className="glacier-focus inline-flex items-center gap-3 rounded-full bg-[#9270ff] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_10px_35px_rgba(146,112,255,0.22)] transition hover:-translate-y-0.5 hover:bg-[#a087ff]"
-            >
-              Explore recommendations
-              <span aria-hidden="true">↗</span>
-            </a>
-            <a href="#visit" className="glacier-focus rounded-full border border-white/15 px-6 py-3.5 text-sm font-medium text-slate-200 transition hover:border-[#62d6e8]/50 hover:text-white">
-              My movies
-            </a>
-          </motion.div>
-
-          <p className="mt-12 text-xs tracking-wide text-slate-500">
-            Curated discoveries. Personal watchlists. Stories for every mood.
-          </p>
-        </div>
+        <motion.p
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.42, ease: 'easeOut' }}
+          className="mt-7 max-w-2xl font-serif text-base italic leading-relaxed text-white/90 drop-shadow-[0_1px_18px_rgba(0,0,0,.55)] md:text-lg"
+        >
+          Discover remarkable movies and series, find your next favourite, and keep the stories you love close.
+        </motion.p>
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.96, x: 18 }}
-          animate={{ opacity: 1, scale: 1, x: 0 }}
-          transition={{ duration: 0.85, delay: 0.18 }}
-          className="relative mx-auto hidden h-[430px] w-full max-w-[470px] lg:block"
-          aria-label="Abstract artwork representing movie and series discovery"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.58, ease: 'easeOut' }}
+          className="mt-10 flex flex-wrap items-center justify-center gap-3"
         >
-          <div className="absolute left-[7%] top-[12%] h-[310px] w-[205px] rotate-[-10deg] overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-br from-[#283c61] via-[#62558d] to-[#10182c] shadow-2xl">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_35%_25%,rgba(122,220,235,.65),transparent_35%),linear-gradient(155deg,transparent_35%,rgba(7,12,27,.85))]" />
-            <div className="absolute bottom-7 left-5 right-5">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-white/70">A world beyond</p>
-              <p className="mt-2 font-serif text-3xl text-white">Cinema</p>
-            </div>
-          </div>
-          <div className="absolute right-[7%] top-[2%] h-[350px] w-[220px] rotate-[8deg] overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-br from-[#573e75] via-[#282e58] to-[#11182a] shadow-2xl">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_22%,rgba(242,189,114,.58),transparent_32%),linear-gradient(160deg,transparent_30%,rgba(7,12,27,.9))]" />
-            <div className="absolute bottom-7 left-5 right-5">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-white/70">New perspectives</p>
-              <p className="mt-2 font-serif text-3xl text-white">Stories</p>
-            </div>
-          </div>
-          <div className="absolute bottom-[1%] left-[30%] rounded-2xl border border-white/15 bg-[#17213a]/90 px-5 py-4 shadow-xl backdrop-blur-xl">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-[#62d6e8]">Your next watch</p>
-            <p className="mt-1 text-sm font-medium text-white">Starts with a discovery.</p>
-          </div>
-          <div className="absolute right-[2%] top-[48%] h-3 w-3 rounded-full bg-[#9270ff] shadow-[0_0_28px_8px_rgba(146,112,255,.3)]" />
+          <a
+            href="#exhibit"
+            className="glacier-focus inline-flex items-center gap-3 rounded-full bg-[#a28dff] px-6 py-3.5 text-sm font-semibold text-[#111628] shadow-[0_10px_35px_rgba(162,141,255,.28)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#b5a5ff]"
+          >
+            Explore recommendations
+            <span aria-hidden="true">↗</span>
+          </a>
+          <a
+            href="#visit"
+            className="glacier-focus inline-flex items-center gap-3 rounded-full border border-white/35 bg-white/[0.07] px-6 py-3.5 text-sm font-medium text-white backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-[#78d8ce]/70 hover:bg-white/[0.13]"
+          >
+            My movies
+          </a>
         </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.82 }}
+          className="mt-12 text-[10px] font-medium uppercase tracking-[0.22em] text-white/65"
+        >
+          A little less scrolling. A lot more discovering.
+        </motion.p>
       </div>
     </section>
   )
