@@ -51,7 +51,7 @@ export default function Visit() {
                     {item.poster_url ? <img src={item.poster_url} alt={'Poster for ' + item.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover" loading="lazy" /> : <div className={'catalogue-artwork artwork-' + (index % 4)}><span className="rounded-full border border-white/25 bg-black/20 px-2 py-1 text-[8px] uppercase tracking-[0.16em] text-white">{item.kind}</span></div>}
                     <h4 className="mt-3 font-serif text-lg text-[var(--text)]">{item.title}</h4>
                     <p className="mt-1 text-[10px] text-[var(--muted)]">{item.year} · {item.genre}</p>
-                    <button type="button" onClick={() => void toggleFavorite(item.id)} className="mt-2 text-xs text-[var(--accent)] hover:underline">Remove from favorites</button>
+                    <button type="button" aria-pressed="true" onClick={() => void toggleFavorite(item.id)} className="mt-3 rounded-full border border-[var(--line)] px-3 py-2 text-xs font-medium text-[var(--text)] transition hover:border-[var(--accent)] hover:bg-[var(--surface)]">Remove from favorites</button>
                   </article>)}
                 </div>
               ) : <div className="rounded-2xl border border-dashed border-[var(--line)] p-7">
