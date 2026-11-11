@@ -123,7 +123,7 @@ export default function Navbar() {
               aria-label={label}
               title={label}
               aria-current={isActive ? 'location' : undefined}
-              className={`glacier-focus relative flex h-10 w-[60px] items-center justify-center rounded-full border-0 bg-transparent transition-colors ${isActive ? 'text-white' : 'text-white/65 hover:text-white'}`}
+              className={`glacier-focus relative flex h-10 w-[60px] cursor-pointer items-center justify-center rounded-full border-0 bg-transparent transition-colors ${isActive ? 'text-white' : 'text-white/65 hover:text-white'}`}
             >
               {isActive && (
                 <motion.span
