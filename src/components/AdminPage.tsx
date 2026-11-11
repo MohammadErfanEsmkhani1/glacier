@@ -92,7 +92,7 @@ export default function AdminPage() {
   const selectPalette = async (value: Palette) => {
     if (!supabase) return
     setPalette(value); applyPalette(value)
-    const { error } = await supabase.from('site_settings').upsert({ id: true, palette: value }, { onConflict: 'id' })
+    const { error } = await supabase.from('site_settings').update({ palette: value }).eq('id', true)
     setNotice(error ? 'Could not save palette: ' + error.message : 'Palette saved to the Glacier database.')
   }
 
