@@ -35,10 +35,10 @@ function AdminRoute() {
       if (active) setStatus(!error && data === true ? 'allowed' : 'denied')
     }
     void checkAdmin()
-    const { data: listener } = supabase?.auth.onAuthStateChange(() => { void checkAdmin() }) ?? { data: { subscription: { unsubscribe: () => undefined } } }
+    const subscription = supabase?.auth.onAuthStateChange(() => { void checkAdmin() }).data.subscription
     return () => {
       active = false
-      listener.subscription.unsubscribe()
+      subscription?.unsubscribe()
     }
   }, [])
 
@@ -58,16 +58,30 @@ function App() {
   }, [mode])
 
   useEffect(() => {
-    applyPalette(getPalette())
+    let active = true
+    const loadPalette = async () => {
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase.from('site_settings').select('palette').eq('id', true).maybeSingle()
+        if (active && !error && data?.palette) applyPalette(data.palette)
+        else if (active && error) applyPalette(getPalette())
+      } else if (active) applyPalette(getPalette())
+    }
+    void loadPalette()
     const onPop = () => setPath(window.location.pathname)
     window.addEventListener('popstate', onPop)
-    return () => window.removeEventListener('popstate', onPop)
+    return () => { active = false; window.removeEventListener('popstate', onPop) }
   }, [])
 
   useEffect(() => {
-    const pageKey = path === '/' ? 'home' : path.replace('/', '')
-    const updateSeo = () => {
-      const seo = readAllSeo()[pageKey] ?? defaultSeo.home
+    let active = true
+    const updateSeo = async () => {
+      const pageKey = path === '/' ? 'home' : path.replace('/', '')
+      let seo = readAllSeo()[pageKey] ?? defaultSeo.home
+      if (isSupabaseConfigured && supabase) {
+        const { data } = await supabase.from('site_pages').select('seo_title,seo_description').eq('slug', pageKey).maybeSingle()
+        if (data) seo = { title: data.seo_title, description: data.seo_description }
+      }
+      if (!active) return
       document.title = seo.title
       let description = document.querySelector<HTMLMetaElement>('meta[name="description"]')
       if (!description) {
@@ -77,9 +91,9 @@ function App() {
       }
       description.content = seo.description
     }
-    updateSeo()
+    void updateSeo()
     window.addEventListener('glacier:seo-updated', updateSeo)
-    return () => window.removeEventListener('glacier:seo-updated', updateSeo)
+    return () => { active = false; window.removeEventListener('glacier:seo-updated', updateSeo) }
   }, [path])
 
   const onToggleMode = () => setMode((current) => current === 'dark' ? 'light' : 'dark')
