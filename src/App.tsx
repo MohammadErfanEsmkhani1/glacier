@@ -1,60 +1,64 @@
 import { useEffect, useState } from 'react'
-import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import Exhibit from './components/Exhibit'
 import Visit from './components/Visit'
 import Mission from './components/Mission'
 import SiteFooter from './components/SiteFooter'
-import SiteNavigation from './components/SiteNavigation'
+import SiteHeader from './components/SiteHeader'
 import CategoryPage from './components/CategoryPage'
 import AuthPage from './components/AuthPage'
 import AdminPage from './components/AdminPage'
+import { applyPalette, defaultSeo, getPalette, readAllSeo } from './lib/siteStorage'
 import './index.css'
 
 type Mode = 'dark' | 'light'
+const specialPaths = ['/categories', '/login', '/register', '/admin']
 
 function App() {
   const [path, setPath] = useState(window.location.pathname)
   const [mode, setMode] = useState<Mode>(() => localStorage.getItem('glacier-mode') === 'light' ? 'light' : 'dark')
+  useEffect(() => {
+    document.documentElement.dataset.mode = mode
+    localStorage.setItem('glacier-mode', mode)
+  }, [mode])
 
   useEffect(() => {
+    applyPalette(getPalette())
     const onPop = () => setPath(window.location.pathname)
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
 
   useEffect(() => {
-    document.documentElement.dataset.mode = mode
-    localStorage.setItem('glacier-mode', mode)
-  }, [mode])
+    const pageKey = path === '/' ? 'home' : path.replace('/', '')
+    const updateSeo = () => {
+      const seo = readAllSeo()[pageKey] ?? defaultSeo.home
+      document.title = seo.title
+      let description = document.querySelector<HTMLMetaElement>('meta[name="description"]')
+      if (!description) {
+        description = document.createElement('meta')
+        description.name = 'description'
+        document.head.appendChild(description)
+      }
+      description.content = seo.description
+    }
+    updateSeo()
+    window.addEventListener('glacier:seo-updated', updateSeo)
+    return () => window.removeEventListener('glacier:seo-updated', updateSeo)
+  }, [path])
 
-  const navigate = (next: string) => {
-    if (next === path) return
-    window.history.pushState({}, '', next)
-    setPath(next)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  if (['/movies', '/series', '/login', '/register', '/admin'].includes(path)) {
-    return (
-      <div className="app-shell min-h-screen">
-        <SiteNavigation path={path} onNavigate={navigate} mode={mode} onToggleMode={() => setMode(mode === 'dark' ? 'light' : 'dark')} />
-        {path === '/movies' && <CategoryPage kind="movie" />}
-        {path === '/series' && <CategoryPage kind="series" />}
-        {(path === '/login' || path === '/register') && <AuthPage key={path} initialMode={path === '/register' ? 'register' : 'login'} onNavigate={navigate} />}
-        {path === '/admin' && <AdminPage />}
-        <SiteFooter />
-      </div>
-    )
-  }
+  const onToggleMode = () => setMode((current) => current === 'dark' ? 'light' : 'dark')
+  const isSpecialPage = specialPaths.includes(path)
 
   return (
-    <div className="w-full min-h-screen">
-      <Navbar />
-      <main><Hero /><Exhibit /><Visit /><Mission /></main>
+    <div className={isSpecialPage ? 'app-shell min-h-screen' : 'site-home min-h-screen'}>
+      <SiteHeader path={path} mode={mode} onToggleMode={onToggleMode} />
+      {path === '/categories' && <CategoryPage />}
+      {(path === '/login' || path === '/register') && <AuthPage key={path} initialMode={path === '/register' ? 'register' : 'login'} />}
+      {path === '/admin' && <AdminPage />}
+      {!isSpecialPage && <main><Hero /><Exhibit /><Visit /><Mission /></main>}
       <SiteFooter />
     </div>
   )
 }
-
 export default App
