@@ -38,7 +38,7 @@ function InfoIcon() {
 const items = [
   { key: 'home', label: 'Home', Icon: HomeIcon },
   { key: 'exhibit', label: 'Recommended movies', Icon: FilmIcon },
-  { key: 'visit', label: 'Account', Icon: BookmarkIcon },
+  { key: 'visit', label: 'My movies', Icon: BookmarkIcon },
   { key: 'mission', label: 'About Glacier', Icon: InfoIcon },
 ]
 
@@ -83,10 +83,6 @@ export default function Navbar() {
   }, [])
 
   const goTo = (key: string) => {
-    if (window.location.pathname !== '/') {
-      window.location.href = '/#' + key
-      return
-    }
     const section = document.getElementById(key)
     if (!section) return
 
