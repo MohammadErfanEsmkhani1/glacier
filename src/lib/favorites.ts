@@ -56,6 +56,10 @@ export function useFavorites() {
 
     const sync = (id: string | null) => {
       if (!active) return
+      // Token refreshes and browser resume can emit auth events for the same
+      // user. Keep the current favorites visible instead of clearing and
+      // querying Supabase again.
+      if (currentUserId.current === id) return
       currentUserId.current = id
       pendingTitles.current.clear()
       setUserId(id)
