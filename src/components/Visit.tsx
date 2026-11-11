@@ -53,7 +53,7 @@ export default function Visit() {
                 <p className="mt-4 text-sm leading-7 text-[var(--muted)]">Sign up with your email and password. New accounts will confirm their email address before signing in.</p>
               </div>
               <div className="flex shrink-0 flex-col gap-3">
-                <a href="/register" className="glacier-focus inline-flex justify-center rounded-full bg-[var(--accent)] px-6 py-3.5 text-sm font-semibold text-[#101628] transition hover:-translate-y-0.5 hover:brightness-110">Create account</a>
+                <a href="/register" className="glacier-focus inline-flex justify-center rounded-full bg-[var(--accent)] px-6 py-3.5 text-sm font-semibold text-[#101628] transition hover:-translate-y-0.5 hover:brightness-110">Sign in / Create account ↗</a>
               </div>
             </motion.div>
           </>
