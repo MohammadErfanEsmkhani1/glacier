@@ -10,10 +10,43 @@ import CategoryPage from './components/CategoryPage'
 import AuthPage from './components/AuthPage'
 import AdminPage from './components/AdminPage'
 import { applyPalette, defaultSeo, getPalette, readAllSeo } from './lib/siteStorage'
+import { isSupabaseConfigured, supabase } from './lib/supabase'
 import './index.css'
 
 type Mode = 'dark' | 'light'
 const specialPaths = ['/categories', '/login', '/register', '/admin']
+
+function AdminRoute() {
+  const [status, setStatus] = useState<'checking' | 'allowed' | 'denied' | 'unconfigured'>('checking')
+
+  useEffect(() => {
+    let active = true
+    const checkAdmin = async () => {
+      if (!isSupabaseConfigured || !supabase) {
+        if (active) setStatus('unconfigured')
+        return
+      }
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        if (active) setStatus('denied')
+        return
+      }
+      const { data, error } = await supabase.rpc('is_glacier_admin')
+      if (active) setStatus(!error && data === true ? 'allowed' : 'denied')
+    }
+    void checkAdmin()
+    const { data: listener } = supabase?.auth.onAuthStateChange(() => { void checkAdmin() }) ?? { data: { subscription: { unsubscribe: () => undefined } } }
+    return () => {
+      active = false
+      listener.subscription.unsubscribe()
+    }
+  }, [])
+
+  if (status === 'checking') return <main className="flex min-h-screen items-center justify-center px-6 pt-32 text-sm text-[var(--muted)]">Checking administrator access…</main>
+  if (status === 'unconfigured') return <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 pt-32 text-center"><h1 className="font-serif text-4xl text-[var(--text)]">Backend not configured</h1><p className="mt-4 text-sm leading-6 text-[var(--muted)]">Supabase connection details are missing from this deployment. Add the Vercel environment variables and redeploy.</p></main>
+  if (status === 'denied') return <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 pt-32 text-center"><h1 className="font-serif text-4xl text-[var(--text)]">Administrator access required</h1><p className="mt-4 text-sm leading-6 text-[var(--muted)]">Sign in with the account assigned as Glacier's administrator. If this is your first setup, we still need to assign your account in Supabase.</p><a href="/login" className="mt-6 rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[#101628]">Go to sign in</a></main>
+  return <AdminPage />
+}
 
 function App() {
   const [path, setPath] = useState(window.location.pathname)
@@ -58,7 +91,7 @@ function App() {
       <SiteHeader mode={mode} onToggleMode={onToggleMode} />
       {path === '/categories' && <CategoryPage />}
       {(path === '/login' || path === '/register') && <AuthPage key={path} initialMode={path === '/register' ? 'register' : 'login'} />}
-      {path === '/admin' && <AdminPage />}
+      {path === '/admin' && <AdminRoute />}
       {!isSpecialPage && <main><Hero /><Exhibit /><Visit /><Mission /></main>}
       <SiteFooter />
     </div>
