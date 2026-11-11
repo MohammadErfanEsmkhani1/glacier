@@ -12,7 +12,7 @@ export default function SiteHeader({ mode, onToggleMode }: Props) {
         title={mode === 'dark' ? 'Switch to light appearance' : 'Switch to dark appearance'}
       >
         <span className="theme-control-icon" aria-hidden="true">{mode === 'dark' ? '☼' : '☾'}</span>
-        <span className="text-xs font-medium">{mode === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+        <span className="text-xs font-medium">Dark/Light mode</span>
         <span className={mode === 'light' ? 'theme-track is-on' : 'theme-track'} aria-hidden="true"><span /></span>
       </button>
     </header>
