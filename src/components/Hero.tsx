@@ -6,6 +6,7 @@ export default function Hero() {
   return (
     <section id="home" className="relative flex min-h-[100svh] w-full flex-col overflow-hidden bg-[var(--page)]">
       <LoopingVideo src="/hero.mp4" />
+      <div aria-hidden="true" className="hero-theme-overlay pointer-events-none absolute inset-0" />
       <div aria-hidden="true" className="absolute inset-0 bg-black/25" />
       <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,.28)_0%,transparent_24%,transparent_61%,rgba(0,0,0,.48)_100%)]" />
       <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,.18)_0%,transparent_20%,transparent_80%,rgba(0,0,0,.18)_100%)]" />
