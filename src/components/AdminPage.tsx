@@ -82,8 +82,8 @@ export default function AdminPage() {
         {notice && <p role="status" className="mt-5 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--muted)]">{notice}</p>}
 
         {tab === 'catalogue' && (
-          <section className="mt-7 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-            <form onSubmit={saveTitle} className="admin-panel space-y-4">
+          <section className="mt-7 grid items-start gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+            <form onSubmit={saveTitle} className="admin-panel h-fit self-start space-y-4">
               <div>
                 <h2 className="font-serif text-2xl text-[var(--text)]">{editingId ? 'Edit title' : 'Add a title'}</h2>
                 <p className="mt-2 text-sm text-[var(--muted)]">Add movies and series manually to the catalogue.</p>
