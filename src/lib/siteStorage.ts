@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { isSupabaseConfigured, supabase } from './supabase'
 
 export type Palette = 'glacier' | 'aurora' | 'ember'
 export type SiteCopy = { title: string; description: string }
@@ -19,10 +20,7 @@ export const defaultSeo: Record<string, PageSeo> = {
   admin: { title: 'Admin — Glacier', description: 'Manage the Glacier website.' },
 }
 function readObject<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key)
-    return raw ? { ...fallback, ...JSON.parse(raw) } as T : fallback
-  } catch { return fallback }
+  try { const raw = localStorage.getItem(key); return raw ? { ...fallback, ...JSON.parse(raw) } as T : fallback } catch { return fallback }
 }
 export function readAllCopy() { return readObject('glacier-site-copy', defaultCopy) }
 export function readAllSeo() { return readObject('glacier-page-seo', defaultSeo) }
@@ -47,13 +45,17 @@ export function applyPalette(palette: Palette) {
 export function useSectionCopy(key: string) {
   const [copy, setCopy] = useState<SiteCopy>(() => readSectionCopy(key))
   useEffect(() => {
-    const refresh = () => setCopy(readSectionCopy(key))
+    let active = true
+    const load = async () => {
+      if (!isSupabaseConfigured || !supabase) { if (active) setCopy(readSectionCopy(key)); return }
+      const { data, error } = await supabase.from('site_sections').select('title,description').eq('section_key', key).maybeSingle()
+      if (active && !error && data) setCopy({ title: data.title, description: data.description })
+    }
+    void load()
+    const refresh = () => { void load() }
     window.addEventListener('glacier:site-copy-updated', refresh)
     window.addEventListener('storage', refresh)
-    return () => {
-      window.removeEventListener('glacier:site-copy-updated', refresh)
-      window.removeEventListener('storage', refresh)
-    }
+    return () => { active = false; window.removeEventListener('glacier:site-copy-updated', refresh); window.removeEventListener('storage', refresh) }
   }, [key])
   return copy
 }
