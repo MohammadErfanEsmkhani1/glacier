@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { Session } from '@supabase/supabase-js'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import Exhibit from './components/Exhibit'
@@ -22,7 +23,11 @@ function AdminRoute() {
 
   useEffect(() => {
     let active = true
-    const verifySession = async (session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session']) => {
+    const verifySession = async (session: Session | null) => {
+      if (!supabase) {
+        if (active) { setDiagnostic('Supabase client is unavailable.'); setStatus('unconfigured') }
+        return
+      }
       if (!session) {
         if (active) {
           setDiagnostic('No active Supabase session was found in this browser.')
