@@ -73,3 +73,10 @@
 :root[data-mode="light"] .site-home #home > div[aria-hidden="true"].absolute.inset-0:first-of-type {
   background-color: rgba(244, 249, 252, .08);
 }
+
+/* Keep the appearance control independent of the centered glass dock. */
+.appearance-header { top: 1.25rem; right: 1rem; }
+@media (max-width: 520px) {
+  .appearance-header { top: 5rem; right: .75rem; }
+  .theme-control { padding: .35rem .5rem; gap: .35rem; }
+}
