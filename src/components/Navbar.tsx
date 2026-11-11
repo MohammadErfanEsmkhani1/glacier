@@ -105,13 +105,13 @@ export default function Navbar() {
   }
 
   return (
-    <div className="fixed left-0 right-0 top-5 z-50 flex justify-center px-4">
+    <div className="pointer-events-none fixed left-0 right-0 top-5 z-50 flex justify-center px-4">
       <motion.nav
         aria-label="Primary navigation"
         initial={{ opacity: 0, y: -14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.14] bg-white/[0.075] px-2.5 py-1.5 shadow-[0_12px_44px_rgba(0,0,0,.4),inset_0_1px_0_rgba(255,255,255,.16)] backdrop-blur-[22px]"
+        className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-white/[0.14] bg-white/[0.075] px-2.5 py-1.5 shadow-[0_12px_44px_rgba(0,0,0,.4),inset_0_1px_0_rgba(255,255,255,.16)] backdrop-blur-[22px]"
       >
         {items.map(({ key, label, Icon }) => {
           const isActive = active === key
