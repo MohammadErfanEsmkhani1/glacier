@@ -41,7 +41,7 @@ export default function Visit() {
         {signedIn ? (
           <>
             <SectionHeading eyebrow="Your Glacier collection" title="Your favorites" intro="The stories you choose to keep close will live here." />
-            <motion.div initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.25 }} transition={{ duration: 0.65 }} className="mx-auto mt-14 flex max-w-4xl flex-col items-start gap-5 rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-8 md:p-12">
+            <motion.div initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.25 }} transition={{ duration: 0.65 }} className="favorites-feature-card mx-auto mt-14 flex max-w-4xl flex-col items-start gap-5 rounded-3xl border border-[var(--line)] p-8 md:p-12">
               <span className="inline-flex rounded-full border border-[var(--line)] bg-[var(--page)] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Signed in{emailName ? ' · ' + emailName : ''}</span>
               <h3 className="font-serif text-3xl leading-tight text-[var(--text)] md:text-4xl">Your personal shelf is ready.</h3>
               <p className="max-w-2xl text-sm leading-7 text-[var(--muted)]">Your personal collection of movies and series, saved from Explore.</p>
