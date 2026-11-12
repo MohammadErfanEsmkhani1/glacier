@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useFavorites } from '../lib/favorites'
 import { supabase } from '../lib/supabase'
-import type { CatalogKind, CatalogTitle } from '../lib/catalog'
+import { getTitleUrl, type CatalogKind, type CatalogTitle } from '../lib/catalog'
 
 type TitlePageProps = { titleId: string }
 
@@ -36,6 +36,16 @@ export default function TitlePage({ titleId }: TitlePageProps) {
       setTitle(item)
       setLoading(false)
 
+      const requestedReturn = new URLSearchParams(window.location.search).get('from')
+      const safeReturn = requestedReturn && requestedReturn.startsWith('/') && !requestedReturn.startsWith('//') && !requestedReturn.startsWith('/title/') ? requestedReturn : undefined
+      const canonicalUrl = getTitleUrl(item, safeReturn)
+      if (window.location.pathname + window.location.search !== canonicalUrl) {
+        window.history.replaceState(window.history.state, '', canonicalUrl)
+      }
+      document.title = item.title + ' — Glacier'
+      const descriptionMeta = document.querySelector<HTMLMetaElement>('meta[name="description"]')
+      if (descriptionMeta) descriptionMeta.content = item.description || 'Discover ' + item.title + ' on Glacier.'
+
       const { data: authData } = await supabase.auth.getUser()
       const viewerId = authData.user?.id
       if (viewerId) {
@@ -56,7 +66,7 @@ export default function TitlePage({ titleId }: TitlePageProps) {
   const returnTo = requestedReturn && requestedReturn.startsWith('/') && !requestedReturn.startsWith('//') && !requestedReturn.startsWith('/title/') ? requestedReturn : '/categories'
 
   return (
-    <main className="min-h-screen px-5 pb-24 pt-36 sm:px-8">
+    <main data-preloader-pending={loading ? 'true' : undefined} className="min-h-screen px-5 pb-24 pt-36 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <a href={returnTo} className="inline-flex items-center gap-2 text-sm text-[var(--muted)] transition hover:text-[var(--text)]">← Back</a>
         {loading ? (
