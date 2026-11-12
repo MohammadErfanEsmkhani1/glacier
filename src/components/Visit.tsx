@@ -48,8 +48,10 @@ export default function Visit() {
     <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-5">
       {items.map((item, index) => (
         <motion.article key={item.id} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.35, delay: index * 0.04 }} className="min-w-0">
-          {item.poster_url ? <img src={item.poster_url} alt={'Poster for ' + item.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-lg" loading="lazy" /> : <div className={'catalogue-artwork home-artwork artwork-' + (index % 4)}><span className="rounded-full border border-white/25 bg-black/20 px-2 py-1 text-[8px] uppercase tracking-[0.16em] text-white">{item.kind}</span></div>}
-          <h3 className="mt-3 font-serif text-lg leading-tight text-[var(--text)]">{item.title}</h3>
+          <a href={'/title/' + item.id} className="group block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]">
+            {item.poster_url ? <img src={item.poster_url} alt={'Poster for ' + item.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-lg transition group-hover:-translate-y-1" loading="lazy" /> : <div className={'catalogue-artwork home-artwork artwork-' + (index % 4)}><span className="rounded-full border border-white/25 bg-black/20 px-2 py-1 text-[8px] uppercase tracking-[0.16em] text-white">{item.kind}</span></div>}
+            <h3 className="mt-3 font-serif text-lg leading-tight text-[var(--text)] group-hover:text-[var(--accent)]">{item.title}</h3>
+          </a>
           <p className="mt-1 text-[10px] text-[var(--muted)]">{item.year} · {item.genre}</p>
         </motion.article>
       ))}
@@ -62,6 +64,7 @@ export default function Visit() {
       <div aria-hidden="true" className="pointer-events-none absolute -bottom-48 -left-40 h-[26rem] w-[26rem] rounded-full bg-[#f18f80]/[0.07] blur-[110px]" />
       <div className="relative mx-auto max-w-6xl">
         {!signedIn ? (
+          <>
         <SectionHeading
           eyebrow="Your personal space"
           title="My movies"
@@ -106,6 +109,7 @@ export default function Visit() {
             <p className="mt-5 text-xs leading-5 text-slate-300/55">You can still explore recommendations without an account.</p>
           </div>
         </motion.div>
+          </>
         ) : (
           <>
             <SectionHeading eyebrow="Your personal space" title="My movies" intro="Your latest watches and the five titles you most recently saved." />
