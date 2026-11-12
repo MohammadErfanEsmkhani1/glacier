@@ -1,6 +1,8 @@
 -- Add clean, human-readable title URLs.
 -- Run this once in Supabase SQL Editor after the existing Glacier migrations.
 
+create extension if not exists unaccent;
+
 alter table public.titles
   add column if not exists slug text;
 
