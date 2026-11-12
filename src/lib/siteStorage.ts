@@ -5,6 +5,28 @@ export type Palette = 'glacier' | 'aurora' | 'ember'
 export type SiteCopy = { title: string; description: string }
 export type PageSeo = { title: string; description: string }
 
+const readySectionCopies = new Set<string>()
+
+function markSectionCopyReady(key: string) {
+  readySectionCopies.add(key)
+  window.dispatchEvent(new CustomEvent('glacier:section-copy-ready', { detail: key }))
+}
+
+export function useSectionCopyReady(key: string) {
+  const [ready, setReady] = useState(readySectionCopies.has(key))
+
+  useEffect(() => {
+    const onReady = (event: Event) => {
+      if ((event as CustomEvent<string>).detail === key) setReady(true)
+    }
+    window.addEventListener('glacier:section-copy-ready', onReady)
+    if (readySectionCopies.has(key)) setReady(true)
+    return () => window.removeEventListener('glacier:section-copy-ready', onReady)
+  }, [key])
+
+  return ready
+}
+
 export const defaultCopy: Record<string, SiteCopy> = {
   homeHero: { title: 'Find a story worth staying for.', description: 'Discover remarkable movies and series, find your next favourite, and keep the stories you love close.' },
   recommendations: { title: 'Recommended movies & series', description: 'A starting collection of memorable stories. Explore by format or search for a title or genre.' },
@@ -47,9 +69,21 @@ export function useSectionCopy(key: string) {
   useEffect(() => {
     let active = true
     const load = async () => {
-      if (!isSupabaseConfigured || !supabase) { if (active) setCopy(readSectionCopy(key)); return }
-      const { data, error } = await supabase.from('site_sections').select('title,description').eq('section_key', key).maybeSingle()
-      if (active && !error && data) setCopy({ title: data.title, description: data.description })
+      if (!isSupabaseConfigured || !supabase) {
+        if (active) {
+          setCopy(readSectionCopy(key))
+          markSectionCopyReady(key)
+        }
+        return
+      }
+      try {
+        const { data, error } = await supabase.from('site_sections').select('title,description').eq('section_key', key).maybeSingle()
+        if (active && !error && data) setCopy({ title: data.title, description: data.description })
+      } catch (error) {
+        console.error('Glacier section copy could not be loaded:', error)
+      } finally {
+        if (active) markSectionCopyReady(key)
+      }
     }
     void load()
     const refresh = () => { void load() }
