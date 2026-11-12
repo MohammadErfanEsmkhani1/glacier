@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import SectionHeading from './SectionHeading'
-import { useCatalog } from '../lib/catalog'
+import { getTitleUrl, useCatalog } from '../lib/catalog'
 import { useFavorites } from '../lib/favorites'
 import { supabase } from '../lib/supabase'
 
@@ -76,7 +76,7 @@ export default function Visit() {
     <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-5">
       {items.map((item, index) => (
         <motion.article key={item.id} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.35, delay: index * 0.04 }} className="min-w-0">
-          <a href={'/title/' + item.id + '?from=' + encodeURIComponent(window.location.pathname + window.location.search + window.location.hash)} className="group block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]">
+          <a href={getTitleUrl(item, window.location.pathname + window.location.search + window.location.hash)} className="group block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]">
             {item.poster_url ? <img src={item.poster_url} alt={'Poster for ' + item.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-lg transition group-hover:-translate-y-1" loading="lazy" /> : <div className={'catalogue-artwork home-artwork artwork-' + (index % 4)}><span className="rounded-full border border-white/25 bg-black/20 px-2 py-1 text-[8px] uppercase tracking-[0.16em] text-white">{item.kind}</span></div>}
             <h3 className="mt-3 font-serif text-lg leading-tight text-[var(--text)] group-hover:text-[var(--accent)]">{item.title}</h3>
           </a>
