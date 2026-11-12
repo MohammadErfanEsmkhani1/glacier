@@ -5,12 +5,13 @@ type Props = { mode: 'dark' | 'light'; onToggleMode: () => void }
 
 export default function SiteHeader({ mode, onToggleMode }: Props) {
   const [signedIn, setSignedIn] = useState(false)
+  const [sessionReady, setSessionReady] = useState(!supabase)
 
   useEffect(() => {
-    if (!supabase) return
+    if (!supabase) { setSessionReady(true); return }
     let active = true
     const syncSession = (session: { user: { id: string } } | null) => {
-      if (active) setSignedIn(Boolean(session))
+      if (active) { setSignedIn(Boolean(session)); setSessionReady(true) }
     }
     void supabase.auth.getSession().then(({ data }) => syncSession(data.session))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => syncSession(session))
@@ -18,7 +19,7 @@ export default function SiteHeader({ mode, onToggleMode }: Props) {
   }, [])
 
   return (
-    <header className="appearance-header fixed left-4 right-4 top-5 z-50 flex items-center justify-between gap-2">
+    <header data-preloader-pending={sessionReady ? undefined : 'true'} className="appearance-header fixed left-4 right-4 top-5 z-50 flex items-center justify-between gap-2">
       <a href={signedIn ? '/account' : '/register'} className="account-header-link">
         <span>{signedIn ? 'Your Account' : 'Sign in / Create account ↗'}</span>
         <svg className="account-header-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
