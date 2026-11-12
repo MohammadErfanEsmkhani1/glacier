@@ -65,7 +65,7 @@ export default function TitlePage({ titleId }: TitlePageProps) {
           <div className="mx-auto max-w-xl py-24 text-center"><h1 className="font-serif text-4xl text-[var(--text)]">Title unavailable</h1><p className="mt-4 text-sm leading-7 text-[var(--muted)]">{loadError}</p><a href={returnTo} className="mt-7 inline-flex rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[#101628]">Go back</a></div>
         ) : (
           <motion.article initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }} className="mt-10 grid items-start gap-10 md:grid-cols-[minmax(220px,0.72fr)_1.28fr] md:gap-16">
-            <div className="mx-auto w-full max-w-sm">
+            <div className="mx-auto w-full max-w-[176px]">
               {title.poster_url ? <img src={title.poster_url} alt={'Poster for ' + title.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-2xl" /> : <div className="catalogue-artwork home-artwork artwork-0 aspect-[2/3] w-full rounded-xl"><span className="rounded-full border border-white/25 bg-black/20 px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-white">{title.kind}</span></div>}
             </div>
             <div className="pt-2">
