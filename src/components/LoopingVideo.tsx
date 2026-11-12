@@ -105,7 +105,7 @@ export default function LoopingVideo({ src }: { src: string }) {
   return (
     <div ref={containerRef} aria-hidden="true" style={{ position: 'absolute', inset: 0 }}>
       <video ref={firstRef} style={layer} src={src} autoPlay muted playsInline preload="auto" />
-      <video ref={secondRef} style={layer} src={src} muted playsInline preload="auto" />
+      <video ref={secondRef} data-preloader-skip="true" style={layer} src={src} muted playsInline preload="auto" />
     </div>
   )
 }
