@@ -19,12 +19,13 @@ export default function Visit() {
       setHistoryLoading(false)
       return
     }
+    const client = supabase
     let active = true
     setHistoryLoading(true)
     const loadPersonalTitles = async () => {
       const [favorites, recent] = await Promise.all([
-        supabase.from('user_favorites').select('title_id').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
-        supabase.from('user_recently_watched').select('title_id').eq('user_id', userId).order('watched_at', { ascending: false }).limit(5),
+        client.from('user_favorites').select('title_id').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
+        client.from('user_recently_watched').select('title_id').eq('user_id', userId).order('watched_at', { ascending: false }).limit(5),
       ])
       if (!active) return
       setFavoriteIds((favorites.data ?? []).map((row) => row.title_id))
@@ -33,7 +34,7 @@ export default function Visit() {
     }
     void loadPersonalTitles()
     const refreshRecent = () => {
-      void supabase.from('user_recently_watched').select('title_id').eq('user_id', userId).order('watched_at', { ascending: false }).limit(5)
+      void client.from('user_recently_watched').select('title_id').eq('user_id', userId).order('watched_at', { ascending: false }).limit(5)
         .then(({ data }) => { if (active) setRecentIds((data ?? []).map((row) => row.title_id)) })
     }
     const onFavoriteChange = (event: Event) => {
