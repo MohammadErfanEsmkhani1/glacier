@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 const RESOURCE_TIMEOUT_MS = 9000
 const TOTAL_TIMEOUT_MS = 15000
+const FADE_OUT_MS = 760
 
 function nextFrame() {
   return new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()))
@@ -114,20 +115,25 @@ async function waitForViewport() {
   ])
 }
 
-export default function ViewportPreloader() {
+export default function ViewportPreloader({ mode }: { mode: 'dark' | 'light' }) {
   const [visible, setVisible] = useState(true)
+  const [leaving, setLeaving] = useState(false)
 
   useEffect(() => {
     let active = true
     const previousOverflow = document.body.style.overflow
+    let hasRevealed = false
     document.body.style.overflow = 'hidden'
 
     const reveal = () => {
-      if (!active) return
+      if (!active || hasRevealed) return
+      hasRevealed = true
       document.body.style.overflow = previousOverflow
-      setVisible(false)
+      setLeaving(true)
+      fadeTimeout = window.setTimeout(() => setVisible(false), FADE_OUT_MS)
     }
 
+    let fadeTimeout = 0
     const safetyTimeout = window.setTimeout(reveal, TOTAL_TIMEOUT_MS)
 
     void waitForViewport().finally(() => {
@@ -139,18 +145,22 @@ export default function ViewportPreloader() {
       active = false
       document.body.style.overflow = previousOverflow
       window.clearTimeout(safetyTimeout)
+      window.clearTimeout(fadeTimeout)
     }
   }, [])
 
   if (!visible) return null
 
   return (
-    <div className="viewport-preloader" role="status" aria-live="polite" aria-label="Preparing the visible page content">
+    <div className={`viewport-preloader mode-${mode}${leaving ? ' is-leaving' : ''}`} role="status" aria-live="polite" aria-label="Loading Glacier">
       <div className="viewport-preloader-content">
-        <span className="viewport-preloader-mark" aria-hidden="true">◇</span>
-        <span className="viewport-preloader-brand">Glacier</span>
+        <span className="viewport-preloader-mark" aria-hidden="true">
+          <svg viewBox="0 0 64 64" focusable="false">
+            <path d="M32 6.5 57.5 32 32 57.5 6.5 32 32 6.5Z" />
+            <path d="M32 17v30M17 32h30M21.4 21.4l21.2 21.2m0-21.2L21.4 42.6" />
+          </svg>
+        </span>
         <span className="viewport-preloader-spinner" aria-hidden="true" />
-        <span className="viewport-preloader-caption">Preparing your view</span>
       </div>
     </div>
   )
