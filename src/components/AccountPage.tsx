@@ -55,9 +55,17 @@ export default function AccountPage() {
     void loadRecent()
     const refresh = () => { void loadRecent() }
     window.addEventListener('glacier:recently-watched-updated', refresh)
+    window.addEventListener('pageshow', refresh)
+    window.addEventListener('focus', refresh)
+    window.addEventListener('popstate', refresh)
+    document.addEventListener('visibilitychange', refresh)
     return () => {
       active = false
       window.removeEventListener('glacier:recently-watched-updated', refresh)
+      window.removeEventListener('pageshow', refresh)
+      window.removeEventListener('focus', refresh)
+      window.removeEventListener('popstate', refresh)
+      document.removeEventListener('visibilitychange', refresh)
     }
   }, [userId])
 
