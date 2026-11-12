@@ -62,35 +62,46 @@ async function loadCatalog(force = false) {
   }
 
   catalogRequest = (async () => {
-    const { data, error } = await supabase
-      .from('titles')
-      .select('id,title,kind,release_year,genre,description,poster_url,featured,created_at')
-      .order('sort_order', { ascending: true })
-      .order('title', { ascending: true })
+    try {
+      const { data, error } = await supabase
+        .from('titles')
+        .select('id,title,kind,release_year,genre,description,poster_url,featured,created_at')
+        .order('sort_order', { ascending: true })
+        .order('title', { ascending: true })
 
-    if (error) {
-      console.error('Glacier catalogue could not be loaded:', error.message)
-      // Keep previously cached data visible if a background refresh fails.
+      if (error) {
+        console.error('Glacier catalogue could not be loaded:', error.message)
+        // Keep previously cached data visible if a background refresh fails.
+        catalogHasLoaded = true
+        notifyCatalogChange()
+        markCatalogLoaded()
+        return
+      }
+
+      cachedTitles = (data ?? []).map((item) => ({
+        id: item.id,
+        title: item.title,
+        kind: item.kind,
+        year: item.release_year ?? 0,
+        genre: item.genre,
+        description: item.description,
+        poster_url: item.poster_url,
+        featured: item.featured,
+        createdAt: item.created_at,
+      }))
       catalogHasLoaded = true
       notifyCatalogChange()
       markCatalogLoaded()
-      return
+    } catch (error) {
+      console.error('Glacier catalogue request failed:', error)
+      // Fall back to the previously cached/local catalogue if the network is unavailable.
+      if (!catalogHasLoaded) {
+        cachedTitles = readLocalCatalog()
+        catalogHasLoaded = true
+      }
+      notifyCatalogChange()
+      markCatalogLoaded()
     }
-
-    cachedTitles = (data ?? []).map((item) => ({
-      id: item.id,
-      title: item.title,
-      kind: item.kind,
-      year: item.release_year ?? 0,
-      genre: item.genre,
-      description: item.description,
-      poster_url: item.poster_url,
-      featured: item.featured,
-      createdAt: item.created_at,
-    }))
-    catalogHasLoaded = true
-    notifyCatalogChange()
-    markCatalogLoaded()
   })().finally(() => {
     catalogRequest = null
   })
