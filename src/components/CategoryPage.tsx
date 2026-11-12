@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { useCatalog, type CatalogKind } from '../lib/catalog'
+import { getTitleUrl, useCatalog, useCatalogReady, type CatalogKind } from '../lib/catalog'
 import { useSectionCopy } from '../lib/siteStorage'
 import { useFavorites } from '../lib/favorites'
 
@@ -10,6 +10,7 @@ export default function CategoryPage() {
   const [kind, setKind] = useState<Filter>('all')
   const [query, setQuery] = useState('')
   const titles = useCatalog()
+  const catalogReady = useCatalogReady()
   const copy = useSectionCopy('categories')
   const { userId, favoriteIds, toggleFavorite, error: favoriteError } = useFavorites()
   const filtered = useMemo(() => titles.filter((item) => {
@@ -20,7 +21,7 @@ export default function CategoryPage() {
   const heading = kind === 'all' ? 'Everything' : kind === 'movie' ? 'Movies' : 'Series'
 
   return (
-    <main className="min-h-screen px-5 pb-24 pt-36 sm:px-8">
+    <main data-preloader-pending={catalogReady ? undefined : 'true'} className="min-h-screen px-5 pb-24 pt-36 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <motion.header initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">Glacier catalogue · made for curious minds</p>
@@ -48,7 +49,7 @@ export default function CategoryPage() {
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-6 lg:grid-cols-6">
           {filtered.map((item, index) => (
             <motion.article key={item.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: Math.min(index * 0.035, 0.28) }} className="group min-w-0">
-              <a href={'/title/' + item.id + '?from=' + encodeURIComponent(window.location.pathname + window.location.search + window.location.hash)} className="group block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]">
+              <a href={getTitleUrl(item, window.location.pathname + window.location.search + window.location.hash)} className="group block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]">
                 {item.poster_url ? <img src={item.poster_url} alt={'Poster for ' + item.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-lg transition duration-300 group-hover:-translate-y-1" loading="lazy" /> : <div className={'catalogue-artwork home-artwork artwork-' + (index % 4)}><span className="rounded-full border border-white/25 bg-black/20 px-2 py-1 text-[8px] uppercase tracking-[0.16em] text-white">{item.kind}</span></div>}
                 <h3 className="mt-3 font-serif text-xl leading-tight text-[var(--text)] group-hover:text-[var(--accent)]">{item.title}</h3>
               </a>
