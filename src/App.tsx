@@ -144,7 +144,7 @@ function App() {
       {isTitlePage && !titleId && <main className="flex min-h-screen items-center justify-center px-6 pt-32 text-center"><div><h1 className="font-serif text-4xl text-[var(--text)]">Title link unavailable</h1><p className="mt-4 text-sm text-[var(--muted)]">This title link is missing its identifier.</p><a href="/categories" className="mt-6 inline-flex rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[#101628]">Browse the catalogue</a></div></main>}
       {!isSpecialPage && <main><Hero /><Exhibit /><Visit /><Mission /></main>}
       <SiteFooter />
-      <ViewportPreloader />
+      <ViewportPreloader mode={mode} />
     </div>
   )
 }
