@@ -37,6 +37,11 @@ export default function Visit() {
       void client.from('user_recently_watched').select('title_id').eq('user_id', userId).order('watched_at', { ascending: false }).limit(5)
         .then(({ data }) => { if (active) setRecentIds((data ?? []).map((row) => row.title_id)) })
     }
+    const refreshOnReturn = () => refreshRecent()
+    window.addEventListener('pageshow', refreshOnReturn)
+    window.addEventListener('focus', refreshOnReturn)
+    window.addEventListener('popstate', refreshOnReturn)
+    document.addEventListener('visibilitychange', refreshOnReturn)
     const onFavoriteChange = (event: Event) => {
       const change = (event as CustomEvent<{ userId: string; titleId: string; saved: boolean }>).detail
       if (!change || change.userId !== userId) return
@@ -50,6 +55,10 @@ export default function Visit() {
       active = false
       window.removeEventListener('glacier:favorites-updated', onFavoriteChange)
       window.removeEventListener('glacier:recently-watched-updated', refreshRecent)
+      window.removeEventListener('pageshow', refreshOnReturn)
+      window.removeEventListener('focus', refreshOnReturn)
+      window.removeEventListener('popstate', refreshOnReturn)
+      document.removeEventListener('visibilitychange', refreshOnReturn)
     }
   }, [userId])
 
