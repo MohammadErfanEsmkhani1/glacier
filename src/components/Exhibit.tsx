@@ -7,7 +7,7 @@ import { useFavorites } from '../lib/favorites'
 
 export default function Exhibit() {
   const [filter, setFilter] = useState<'all' | 'movie' | 'series'>('all')
-  const titles = useCatalog().filter((item) => item.featured)
+  const titles = useCatalog().filter((item) => item.featured).sort((a, b) => Date.parse(b.createdAt ?? '') - Date.parse(a.createdAt ?? '')).slice(0, 12)
   const copy = useSectionCopy('recommendations')
   const { userId, favoriteIds, toggleFavorite, error: favoriteError } = useFavorites()
   const visible = useMemo(() => titles.filter((item) => filter === 'all' || item.kind === filter), [titles, filter])
