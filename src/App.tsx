@@ -64,7 +64,7 @@ function AdminRoute() {
     }
   }, [])
 
-  if (status === 'checking') return <main className="flex min-h-screen items-center justify-center px-6 pt-32 text-sm text-[var(--muted)]">Checking administrator access…</main>
+  if (status === 'checking') return <main data-preloader-pending="true" className="flex min-h-screen items-center justify-center px-6 pt-32 text-sm text-[var(--muted)]">Checking administrator access…</main>
   if (status === 'unconfigured') return <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 pt-32 text-center"><h1 className="font-serif text-4xl text-[var(--text)]">Backend not configured</h1><p className="mt-4 text-sm leading-6 text-[var(--muted)]">Supabase connection details are missing from this deployment. Add the Vercel environment variables and redeploy.</p></main>
   if (status === 'denied') return <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 pt-32 text-center"><h1 className="font-serif text-4xl text-[var(--text)]">Administrator access required</h1><p className="mt-4 text-sm leading-6 text-[var(--muted)]">This account does not have permission to access the admin panel.</p><a href="/login?returnTo=%2Fadmin" className="mt-6 rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[#101628]">Go to sign in</a></main>
   return <AdminPage />
@@ -72,6 +72,7 @@ function AdminRoute() {
 
 function App() {
   const [path, setPath] = useState(window.location.pathname)
+  const [paletteReady, setPaletteReady] = useState(false)
   const [mode, setMode] = useState<Mode>(() => localStorage.getItem('glacier-mode') === 'light' ? 'light' : 'dark')
 
   useEffect(() => {
@@ -82,11 +83,15 @@ function App() {
   useEffect(() => {
     let active = true
     const loadPalette = async () => {
-      if (isSupabaseConfigured && supabase) {
-        const { data, error } = await supabase.from('site_settings').select('palette').eq('id', true).maybeSingle()
-        if (active && !error && data?.palette) applyPalette(data.palette)
-        else if (active && error) applyPalette(getPalette())
-      } else if (active) applyPalette(getPalette())
+      try {
+        if (isSupabaseConfigured && supabase) {
+          const { data, error } = await supabase.from('site_settings').select('palette').eq('id', true).maybeSingle()
+          if (active && !error && data?.palette) applyPalette(data.palette)
+          else if (active) applyPalette(getPalette())
+        } else if (active) applyPalette(getPalette())
+      } finally {
+        if (active) setPaletteReady(true)
+      }
     }
     void loadPalette()
     const onPop = () => setPath(window.location.pathname)
@@ -128,7 +133,7 @@ function App() {
   const isSpecialPage = specialPaths.includes(path) || isTitlePage
 
   return (
-    <div className={isSpecialPage ? 'app-shell min-h-screen' : 'site-home min-h-screen'}>
+    <div data-preloader-pending={paletteReady ? undefined : 'true'} className={isSpecialPage ? 'app-shell min-h-screen' : 'site-home min-h-screen'}>
       {path === '/' && <Navbar mode={mode} onToggleMode={onToggleMode} />}
       {path !== '/' && <SiteHeader mode={mode} onToggleMode={onToggleMode} />}
       {path === '/categories' && <CategoryPage />}
