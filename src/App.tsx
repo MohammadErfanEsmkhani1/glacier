@@ -1,21 +1,32 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import Navbar from './components/Navbar'
-import Hero from './components/Hero'
-import Exhibit from './components/Exhibit'
-import Visit from './components/Visit'
-import Mission from './components/Mission'
+
+
+
+
 import SiteFooter from './components/SiteFooter'
 import SiteHeader from './components/SiteHeader'
-import CategoryPage from './components/CategoryPage'
-import AuthPage from './components/AuthPage'
-import AccountPage from './components/AccountPage'
-import AdminPage from './components/AdminPage'
-import TitlePage from './components/TitlePage'
+
+
+
+
+
 import ViewportPreloader from './components/ViewportPreloader'
 import { applyPalette, defaultSeo, getPalette, readAllSeo } from './lib/siteStorage'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import './index.css'
+
+const HomePage = lazy(() => import('./components/HomePage'))
+const CategoryPage = lazy(() => import('./components/CategoryPage'))
+const AuthPage = lazy(() => import('./components/AuthPage'))
+const AccountPage = lazy(() => import('./components/AccountPage'))
+const AdminPage = lazy(() => import('./components/AdminPage'))
+const TitlePage = lazy(() => import('./components/TitlePage'))
+
+function RouteLoadingFallback() {
+  return <main data-preloader-pending="true" className="min-h-screen bg-[var(--page)]" aria-hidden="true" />
+}
 
 type Mode = 'dark' | 'light'
 const specialPaths = ['/categories', '/login', '/register', '/admin', '/account']
@@ -136,13 +147,13 @@ function App() {
     <div data-preloader-pending={paletteReady ? undefined : 'true'} className={isSpecialPage ? 'app-shell min-h-screen' : 'site-home min-h-screen'}>
       {path === '/' && <Navbar mode={mode} onToggleMode={onToggleMode} />}
       {path !== '/' && <SiteHeader mode={mode} onToggleMode={onToggleMode} />}
-      {path === '/categories' && <CategoryPage />}
-      {(path === '/login' || path === '/register') && <AuthPage key={path} initialMode={path === '/register' ? 'register' : 'login'} />}
-      {path === '/account' && <AccountPage />}
-      {path === '/admin' && <AdminRoute />}
-      {isTitlePage && titleId && <TitlePage titleId={titleId} />}
+      {path === '/categories' && <Suspense fallback={<RouteLoadingFallback />}><CategoryPage /></Suspense>}
+      {(path === '/login' || path === '/register') && <Suspense fallback={<RouteLoadingFallback />}><AuthPage key={path} initialMode={path === '/register' ? 'register' : 'login'} /></Suspense>}
+      {path === '/account' && <Suspense fallback={<RouteLoadingFallback />}><AccountPage /></Suspense>}
+      {path === '/admin' && <Suspense fallback={<RouteLoadingFallback />}><AdminRoute /></Suspense>}
+      {isTitlePage && titleId && <Suspense fallback={<RouteLoadingFallback />}><TitlePage titleId={titleId} /></Suspense>}
       {isTitlePage && !titleId && <main className="flex min-h-screen items-center justify-center px-6 pt-32 text-center"><div><h1 className="font-serif text-4xl text-[var(--text)]">Title link unavailable</h1><p className="mt-4 text-sm text-[var(--muted)]">This title link is missing its identifier.</p><a href="/categories" className="mt-6 inline-flex rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[#101628]">Browse the catalogue</a></div></main>}
-      {!isSpecialPage && <main><Hero /><Exhibit /><Visit /><Mission /></main>}
+      {!isSpecialPage && <Suspense fallback={<RouteLoadingFallback />}><HomePage /></Suspense>}
       <SiteFooter />
       <ViewportPreloader mode={mode} />
     </div>
