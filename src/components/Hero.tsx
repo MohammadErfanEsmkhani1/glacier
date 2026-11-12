@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion'
 import LoopingVideo from './LoopingVideo'
-import { useSectionCopy } from '../lib/siteStorage'
+import { useSectionCopy, useSectionCopyReady } from '../lib/siteStorage'
 export default function Hero() {
   const copy = useSectionCopy('homeHero')
+  const copyReady = useSectionCopyReady('homeHero')
   return (
-    <section id="home" className="relative flex min-h-[100svh] w-full flex-col overflow-hidden bg-[var(--page)]">
+    <section id="home" data-preloader-pending={copyReady ? undefined : 'true'} className="relative flex min-h-[100svh] w-full flex-col overflow-hidden bg-[var(--page)]">
       <LoopingVideo src="/hero.mp4" />
       <div aria-hidden="true" className="hero-theme-overlay pointer-events-none absolute inset-0" />
       <div aria-hidden="true" className="absolute inset-0 bg-black/25" />
