@@ -128,9 +128,11 @@ function App() {
 
   const onToggleMode = () => setMode((current) => current === 'dark' ? 'light' : 'dark')
   const titleMatch = path.match(/^\/title\/([^/]+)$/i)
-  const legacyTitleId = titleMatch?.[1] && /^[0-9a-f-]{36}$/i.test(titleMatch[1]) ? titleMatch[1] : null
+  const titleSegment = titleMatch?.[1] ?? null
+  const legacyTitleId = titleSegment && /^[0-9a-f-]{36}$/i.test(titleSegment) ? titleSegment : null
   const queryTitleId = new URLSearchParams(window.location.search).get('id')
   const titleId = queryTitleId || legacyTitleId
+  const titleSlug = titleId ? undefined : titleSegment || undefined
   const isTitlePage = Boolean(titleMatch)
   const isSpecialPage = specialPaths.includes(path) || isTitlePage
 
@@ -142,8 +144,8 @@ function App() {
       {(path === '/login' || path === '/register') && <Suspense fallback={<RouteLoadingFallback />}><AuthPage key={path} initialMode={path === '/register' ? 'register' : 'login'} /></Suspense>}
       {path === '/account' && <Suspense fallback={<RouteLoadingFallback />}><AccountPage /></Suspense>}
       {path === '/admin' && <Suspense fallback={<RouteLoadingFallback />}><AdminRoute /></Suspense>}
-      {isTitlePage && titleId && <Suspense fallback={<RouteLoadingFallback />}><TitlePage titleId={titleId} /></Suspense>}
-      {isTitlePage && !titleId && <main className="flex min-h-screen items-center justify-center px-6 pt-32 text-center"><div><h1 className="font-serif text-4xl text-[var(--text)]">Title link unavailable</h1><p className="mt-4 text-sm text-[var(--muted)]">This title link is missing its identifier.</p><a href="/categories" className="mt-6 inline-flex rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[#101628]">Browse the catalogue</a></div></main>}
+      {isTitlePage && (titleId || titleSlug) && <Suspense fallback={<RouteLoadingFallback />}><TitlePage titleId={titleId ?? undefined} titleSlug={titleSlug} /></Suspense>}
+      {isTitlePage && !titleId && !titleSlug && <main className="flex min-h-screen items-center justify-center px-6 pt-32 text-center"><div><h1 className="font-serif text-4xl text-[var(--text)]">Title link unavailable</h1><p className="mt-4 text-sm text-[var(--muted)]">This link does not contain a valid title slug.</p><a href="/categories" className="mt-6 inline-flex rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[#101628]">Browse the catalogue</a></div></main>}
       {!isSpecialPage && <Suspense fallback={<RouteLoadingFallback />}><HomePage /></Suspense>}
       <SiteFooter />
       <ViewportPreloader mode={mode} />

@@ -4,6 +4,7 @@ import { isSupabaseConfigured, supabase } from './supabase'
 export type CatalogKind = 'movie' | 'series'
 export type CatalogTitle = {
   id: string
+  slug?: string
   title: string
   kind: CatalogKind
   year: number
@@ -65,7 +66,7 @@ async function loadCatalog(force = false) {
     try {
       const { data, error } = await supabase
         .from('titles')
-        .select('id,title,kind,release_year,genre,description,poster_url,featured,created_at')
+        .select('id,slug,title,kind,release_year,genre,description,poster_url,featured,created_at')
         .order('sort_order', { ascending: true })
         .order('title', { ascending: true })
 
@@ -80,6 +81,7 @@ async function loadCatalog(force = false) {
 
       cachedTitles = (data ?? []).map((item) => ({
         id: item.id,
+        slug: item.slug,
         title: item.title,
         kind: item.kind,
         year: item.release_year ?? 0,
@@ -133,10 +135,8 @@ export function slugifyTitle(title: string) {
   return slug || 'title'
 }
 
-export function getTitleUrl(item: Pick<CatalogTitle, 'id' | 'title'>, from?: string) {
-  const params = new URLSearchParams({ id: item.id })
-  if (from) params.set('from', from)
-  return `/title/${slugifyTitle(item.title)}?${params.toString()}`
+export function getTitleUrl(item: Pick<CatalogTitle, 'title' | 'slug'>) {
+  return '/title/' + (item.slug || slugifyTitle(item.title))
 }
 
 export function readCatalog(): CatalogTitle[] {

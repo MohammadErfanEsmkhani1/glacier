@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { type CatalogKind, type CatalogTitle } from '../lib/catalog'
+import { slugifyTitle, type CatalogKind, type CatalogTitle } from '../lib/catalog'
 import { applyPalette, defaultCopy, defaultSeo, getPalette, type PageSeo, type Palette, type SiteCopy } from '../lib/siteStorage'
 
 type AdminTab = 'catalogue' | 'content' | 'seo' | 'appearance'
@@ -30,7 +30,7 @@ export default function AdminPage() {
     }
     try {
       const [catalogResult, sectionResult, pageResult, settingsResult] = await Promise.all([
-        supabase.from('titles').select('id,title,kind,release_year,genre,description,poster_url,featured').order('sort_order').order('title'),
+        supabase.from('titles').select('id,slug,title,kind,release_year,genre,description,poster_url,featured').order('sort_order').order('title'),
         supabase.from('site_sections').select('section_key,title,description'),
         supabase.from('site_pages').select('slug,seo_title,seo_description'),
         supabase.from('site_settings').select('palette').eq('id', true).maybeSingle(),
@@ -40,7 +40,7 @@ export default function AdminPage() {
         setNotice('Could not load saved settings: ' + failure.message)
         return
       }
-      setTitles((catalogResult.data ?? []).map((item) => ({ id: item.id, title: item.title, kind: item.kind, year: item.release_year ?? 0, genre: item.genre, description: item.description, poster_url: item.poster_url, featured: item.featured })))
+      setTitles((catalogResult.data ?? []).map((item) => ({ id: item.id, slug: item.slug, title: item.title, kind: item.kind, year: item.release_year ?? 0, genre: item.genre, description: item.description, poster_url: item.poster_url, featured: item.featured })))
       const nextCopy = { ...defaultCopy }
       for (const item of sectionResult.data ?? []) nextCopy[item.section_key] = { title: item.title, description: item.description }
       setCopy(nextCopy)
@@ -61,7 +61,36 @@ export default function AdminPage() {
     event.preventDefault()
     if (!supabase) return
     setBusy(true); setNotice('')
-    const payload = { title: draft.title.trim(), kind: draft.kind, release_year: draft.year, genre: draft.genre, description: draft.description, poster_url: draft.poster_url, featured: draft.featured }
+
+    const normalizedTitle = draft.title.trim()
+    const originalTitle = editingId ? titles.find((item) => item.id === editingId) : undefined
+    let slug = originalTitle?.title.trim() === normalizedTitle && originalTitle.slug
+      ? originalTitle.slug
+      : slugifyTitle(normalizedTitle)
+
+    const { data: slugRows, error: slugLookupError } = await supabase.from('titles').select('id').eq('slug', slug)
+    if (slugLookupError) {
+      setBusy(false)
+      setNotice('Could not prepare the title URL: ' + slugLookupError.message)
+      return
+    }
+
+    const slugConflict = (slugRows ?? []).some((row) => row.id !== editingId)
+    if (slugConflict) {
+      const yearSlug = slug + '-' + draft.year
+      const { data: yearRows, error: yearLookupError } = await supabase.from('titles').select('id').eq('slug', yearSlug)
+      if (yearLookupError) {
+        setBusy(false)
+        setNotice('Could not check the title URL: ' + yearLookupError.message)
+        return
+      }
+      slug = yearSlug
+      if ((yearRows ?? []).some((row) => row.id !== editingId)) {
+        slug = yearSlug + '-' + crypto.randomUUID().slice(0, 8)
+      }
+    }
+
+    const payload = { title: normalizedTitle, slug, kind: draft.kind, release_year: draft.year, genre: draft.genre, description: draft.description, poster_url: draft.poster_url, featured: draft.featured }
     const result = editingId
       ? await supabase.from('titles').update(payload).eq('id', editingId)
       : await supabase.from('titles').insert(payload)
@@ -140,7 +169,7 @@ export default function AdminPage() {
             <div className="flex flex-wrap gap-2"><button disabled={busy} type="submit" className="admin-primary">{busy ? 'Saving…' : editingId ? 'Save changes' : 'Add to catalogue'}</button>{editingId && <button type="button" onClick={() => { setEditingId(null); setDraft(emptyDraft) }} className="admin-secondary">Cancel</button>}</div>
           </form>
           <div className="admin-panel"><div className="flex items-end justify-between gap-3"><div><h2 className="font-serif text-2xl text-[var(--text)]">Your titles</h2><p className="mt-2 text-sm text-[var(--muted)]">{titles.length} entries</p></div></div>
-            <div className="mt-5 space-y-3">{sortedTitles.map((item) => <article key={item.id} className="flex flex-col gap-3 rounded-xl border border-[var(--line)] p-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="font-medium text-[var(--text)]">{item.title} <span className="ml-2 text-xs text-[var(--muted)]">{item.year}</span></p><p className="mt-1 text-xs text-[var(--muted)]">{item.kind === 'movie' ? 'Movie' : 'Series'} · {item.genre || 'No genre set'}</p></div><div className="flex shrink-0 gap-2"><button type="button" onClick={() => { setEditingId(item.id); setDraft({ title:item.title,kind:item.kind,year:item.year,genre:item.genre,description:item.description,poster_url:item.poster_url,featured:item.featured }) }} className="admin-secondary">Edit</button><button type="button" onClick={() => void deleteTitle(item.id)} className="admin-danger">Delete</button></div></article>)}
+            <div className="mt-5 space-y-3">{sortedTitles.map((item) => <article key={item.id} className="flex flex-col gap-3 rounded-xl border border-[var(--line)] p-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="font-medium text-[var(--text)]">{item.title} <span className="ml-2 text-xs text-[var(--muted)]">{item.year}</span></p><p className="mt-1 text-xs text-[var(--muted)]">{item.kind === 'movie' ? 'Movie' : 'Series'} · {item.genre || 'No genre set'}</p></div><div className="flex shrink-0 gap-2"><button type="button" onClick={() => { setEditingId(item.id); setDraft({ slug:item.slug, title:item.title,kind:item.kind,year:item.year,genre:item.genre,description:item.description,poster_url:item.poster_url,featured:item.featured }) }} className="admin-secondary">Edit</button><button type="button" onClick={() => void deleteTitle(item.id)} className="admin-danger">Delete</button></div></article>)}
             {titles.length === 0 && <p className="rounded-xl border border-dashed border-[var(--line)] p-8 text-center text-sm text-[var(--muted)]">Your catalogue is empty. Add a title to begin.</p>}</div>
           </div>
         </section>}

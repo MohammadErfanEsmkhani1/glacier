@@ -4,9 +4,21 @@ import { useFavorites } from '../lib/favorites'
 import { supabase } from '../lib/supabase'
 import { getTitleUrl, type CatalogKind, type CatalogTitle } from '../lib/catalog'
 
-type TitlePageProps = { titleId: string }
+type TitlePageProps = { titleId?: string; titleSlug?: string }
 
-export default function TitlePage({ titleId }: TitlePageProps) {
+function getSafeReturnPath() {
+  const fallback = '/categories'
+  try {
+    if (!document.referrer) return fallback
+    const previousPage = new URL(document.referrer)
+    if (previousPage.origin !== window.location.origin || previousPage.pathname.startsWith('/title/')) return fallback
+    return previousPage.pathname + previousPage.search + previousPage.hash
+  } catch {
+    return fallback
+  }
+}
+
+export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
   const { userId, favoriteIds, toggleFavorite, loading: favoritesLoading } = useFavorites()
   const [title, setTitle] = useState<CatalogTitle | null>(null)
   const [loading, setLoading] = useState(true)
@@ -19,9 +31,12 @@ export default function TitlePage({ titleId }: TitlePageProps) {
         if (active) { setLoadError('The Glacier catalogue is not connected.'); setLoading(false) }
         return
       }
-      const { data, error } = await supabase.from('titles')
-        .select('id,title,kind,release_year,genre,description,poster_url,featured')
-        .eq('id', titleId).maybeSingle()
+      const titleQuery = supabase.from('titles')
+        .select('id,slug,title,kind,release_year,genre,description,poster_url,featured')
+      const { data, error } = titleId
+        ? await titleQuery.eq('id', titleId).maybeSingle()
+        : await titleQuery.eq('slug', titleSlug ?? '').maybeSingle()
+
       if (!active) return
       if (error || !data) {
         setLoadError(error ? 'We could not load this title. Please try again.' : 'This title could not be found.')
@@ -29,16 +44,20 @@ export default function TitlePage({ titleId }: TitlePageProps) {
         return
       }
       const item: CatalogTitle = {
-        id: data.id, title: data.title, kind: data.kind as CatalogKind,
-        year: data.release_year ?? 0, genre: data.genre, description: data.description,
-        poster_url: data.poster_url, featured: data.featured,
+        id: data.id,
+        slug: data.slug,
+        title: data.title,
+        kind: data.kind as CatalogKind,
+        year: data.release_year ?? 0,
+        genre: data.genre,
+        description: data.description,
+        poster_url: data.poster_url,
+        featured: data.featured,
       }
       setTitle(item)
       setLoading(false)
 
-      const requestedReturn = new URLSearchParams(window.location.search).get('from')
-      const safeReturn = requestedReturn && requestedReturn.startsWith('/') && !requestedReturn.startsWith('//') && !requestedReturn.startsWith('/title/') ? requestedReturn : undefined
-      const canonicalUrl = getTitleUrl(item, safeReturn)
+      const canonicalUrl = getTitleUrl(item)
       if (window.location.pathname + window.location.search !== canonicalUrl) {
         window.history.replaceState(window.history.state, '', canonicalUrl)
       }
@@ -59,11 +78,10 @@ export default function TitlePage({ titleId }: TitlePageProps) {
     }
     void loadTitle()
     return () => { active = false }
-  }, [titleId])
+  }, [titleId, titleSlug])
 
   const isFavorite = Boolean(title && favoriteIds.includes(title.id))
-  const requestedReturn = new URLSearchParams(window.location.search).get('from')
-  const returnTo = requestedReturn && requestedReturn.startsWith('/') && !requestedReturn.startsWith('//') && !requestedReturn.startsWith('/title/') ? requestedReturn : '/categories'
+  const returnTo = getSafeReturnPath()
 
   return (
     <main data-preloader-pending={loading || favoritesLoading ? 'true' : undefined} className="min-h-screen px-5 pb-24 pt-36 sm:px-8">
