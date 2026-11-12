@@ -33,11 +33,17 @@ export default function Visit() {
       setHistoryLoading(false)
     }
     void loadPersonalTitles()
-    const refreshRecent = () => {
-      void client.from('user_recently_watched').select('title_id').eq('user_id', userId).order('watched_at', { ascending: false }).limit(5)
-        .then(({ data }) => { if (active) setRecentIds((data ?? []).map((row) => row.title_id)) })
+    const refreshPersonalTitles = () => {
+      void Promise.all([
+        client.from('user_favorites').select('title_id').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
+        client.from('user_recently_watched').select('title_id').eq('user_id', userId).order('watched_at', { ascending: false }).limit(5),
+      ]).then(([favorites, recent]) => {
+        if (!active) return
+        setFavoriteIds((favorites.data ?? []).map((row) => row.title_id))
+        setRecentIds((recent.data ?? []).map((row) => row.title_id))
+      })
     }
-    const refreshOnReturn = () => refreshRecent()
+    const refreshOnReturn = () => refreshPersonalTitles()
     window.addEventListener('pageshow', refreshOnReturn)
     window.addEventListener('focus', refreshOnReturn)
     window.addEventListener('popstate', refreshOnReturn)
@@ -50,11 +56,11 @@ export default function Visit() {
         : current.filter((id) => id !== change.titleId))
     }
     window.addEventListener('glacier:favorites-updated', onFavoriteChange)
-    window.addEventListener('glacier:recently-watched-updated', refreshRecent)
+    window.addEventListener('glacier:recently-watched-updated', refreshPersonalTitles)
     return () => {
       active = false
       window.removeEventListener('glacier:favorites-updated', onFavoriteChange)
-      window.removeEventListener('glacier:recently-watched-updated', refreshRecent)
+      window.removeEventListener('glacier:recently-watched-updated', refreshPersonalTitles)
       window.removeEventListener('pageshow', refreshOnReturn)
       window.removeEventListener('focus', refreshOnReturn)
       window.removeEventListener('popstate', refreshOnReturn)
