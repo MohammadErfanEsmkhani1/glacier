@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import Navbar from './components/Navbar'
 import SiteFooter from './components/SiteFooter'
 import SiteHeader from './components/SiteHeader'
 import ViewportPreloader from './components/ViewportPreloader'
@@ -8,6 +7,7 @@ import { applyPalette, defaultSeo, getPalette, readAllSeo } from './lib/siteStor
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import './index.css'
 
+const Navbar = lazy(() => import('./components/Navbar'))
 const HomePage = lazy(() => import('./components/HomePage'))
 const CategoryPage = lazy(() => import('./components/CategoryPage'))
 const AuthPage = lazy(() => import('./components/AuthPage'))
@@ -136,7 +136,7 @@ function App() {
 
   return (
     <div data-preloader-pending={paletteReady ? undefined : 'true'} className={isSpecialPage ? 'app-shell min-h-screen' : 'site-home min-h-screen'}>
-      {path === '/' && <Navbar mode={mode} onToggleMode={onToggleMode} />}
+      {path === '/' && <Suspense fallback={<RouteLoadingFallback />}><Navbar mode={mode} onToggleMode={onToggleMode} /></Suspense>}
       {path !== '/' && <SiteHeader mode={mode} onToggleMode={onToggleMode} />}
       {path === '/categories' && <Suspense fallback={<RouteLoadingFallback />}><CategoryPage /></Suspense>}
       {(path === '/login' || path === '/register') && <Suspense fallback={<RouteLoadingFallback />}><AuthPage key={path} initialMode={path === '/register' ? 'register' : 'login'} /></Suspense>}
