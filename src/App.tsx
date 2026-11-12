@@ -12,6 +12,7 @@ import AuthPage from './components/AuthPage'
 import AccountPage from './components/AccountPage'
 import AdminPage from './components/AdminPage'
 import TitlePage from './components/TitlePage'
+import ViewportPreloader from './components/ViewportPreloader'
 import { applyPalette, defaultSeo, getPalette, readAllSeo } from './lib/siteStorage'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import './index.css'
@@ -96,6 +97,7 @@ function App() {
   useEffect(() => {
     let active = true
     const updateSeo = async () => {
+      if (path.startsWith('/title/')) return
       const pageKey = path === '/' ? 'home' : path.replace('/', '')
       let seo = readAllSeo()[pageKey] ?? defaultSeo.home
       if (isSupabaseConfigured && supabase) {
@@ -118,7 +120,10 @@ function App() {
   }, [path])
 
   const onToggleMode = () => setMode((current) => current === 'dark' ? 'light' : 'dark')
-  const titleMatch = path.match(/^\/title\/([0-9a-f-]+)$/i)
+  const titleMatch = path.match(/^\/title\/([^/]+)$/i)
+  const legacyTitleId = titleMatch?.[1] && /^[0-9a-f-]{36}$/i.test(titleMatch[1]) ? titleMatch[1] : null
+  const queryTitleId = new URLSearchParams(window.location.search).get('id')
+  const titleId = queryTitleId || legacyTitleId
   const isTitlePage = Boolean(titleMatch)
   const isSpecialPage = specialPaths.includes(path) || isTitlePage
 
@@ -130,9 +135,11 @@ function App() {
       {(path === '/login' || path === '/register') && <AuthPage key={path} initialMode={path === '/register' ? 'register' : 'login'} />}
       {path === '/account' && <AccountPage />}
       {path === '/admin' && <AdminRoute />}
-      {titleMatch && <TitlePage titleId={titleMatch[1]} />}
+      {isTitlePage && titleId && <TitlePage titleId={titleId} />}
+      {isTitlePage && !titleId && <main className="flex min-h-screen items-center justify-center px-6 pt-32 text-center"><div><h1 className="font-serif text-4xl text-[var(--text)]">Title link unavailable</h1><p className="mt-4 text-sm text-[var(--muted)]">This title link is missing its identifier.</p><a href="/categories" className="mt-6 inline-flex rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[#101628]">Browse the catalogue</a></div></main>}
       {!isSpecialPage && <main><Hero /><Exhibit /><Visit /><Mission /></main>}
       <SiteFooter />
+      <ViewportPreloader />
     </div>
   )
 }
