@@ -6,12 +6,14 @@ import { supabase } from '../lib/supabase'
 
 export default function AccountPage() {
   const catalog = useCatalog()
-  const { favoriteIds, loading: favoritesLoading, error: favoritesError, toggleFavorite } = useFavorites()
+  const { userId, favoriteIds, loading: favoritesLoading, error: favoritesError, toggleFavorite } = useFavorites()
   const [checkingSession, setCheckingSession] = useState(true)
   const [signedIn, setSignedIn] = useState(false)
   const [emailName, setEmailName] = useState('')
   const [signingOut, setSigningOut] = useState(false)
   const [signOutError, setSignOutError] = useState('')
+  const [recentIds, setRecentIds] = useState<string[]>([])
+  const [recentLoading, setRecentLoading] = useState(false)
 
   useEffect(() => {
     if (!supabase) {
@@ -32,6 +34,34 @@ export default function AccountPage() {
       subscription.unsubscribe()
     }
   }, [])
+
+  useEffect(() => {
+    if (!supabase || !userId) {
+      setRecentIds([])
+      setRecentLoading(false)
+      return
+    }
+    const client = supabase
+    let active = true
+    setRecentLoading(true)
+    const loadRecent = async () => {
+      const { data, error } = await client.from('user_recently_watched')
+        .select('title_id').eq('user_id', userId)
+        .order('watched_at', { ascending: false }).limit(50)
+      if (!active) return
+      if (!error) setRecentIds((data ?? []).map((row) => row.title_id))
+      setRecentLoading(false)
+    }
+    void loadRecent()
+    const refresh = () => { void loadRecent() }
+    window.addEventListener('glacier:recently-watched-updated', refresh)
+    return () => {
+      active = false
+      window.removeEventListener('glacier:recently-watched-updated', refresh)
+    }
+  }, [userId])
+
+  const recentTitles = recentIds.map((id) => catalog.find((item) => item.id === id)).filter((item) => item !== undefined)
 
   const favoriteTitles = catalog.filter((item) => favoriteIds.includes(item.id))
 
@@ -92,7 +122,7 @@ export default function AccountPage() {
               <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                 {favoriteTitles.map((item, index) => (
                   <motion.article key={item.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.24) }} className="group min-w-0">
-                    <a href={'/title/' + item.id} className="group block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]">
+                    <a href={'/title/' + item.id + '?from=' + encodeURIComponent(window.location.pathname + window.location.search + window.location.hash)} className="group block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]">
                       {item.poster_url
                         ? <img src={item.poster_url} alt={'Poster for ' + item.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-lg transition duration-300 group-hover:-translate-y-1" loading="lazy" />
                         : <div className={'catalogue-artwork home-artwork artwork-' + (index % 4)}><span className="rounded-full border border-white/25 bg-black/20 px-2 py-1 text-[8px] uppercase tracking-[0.16em] text-white">{item.kind}</span></div>}
@@ -114,6 +144,36 @@ export default function AccountPage() {
               </div>
             )}
             {favoritesError && <p role="status" className="mt-5 text-center text-xs text-[var(--muted)]">Your favorites could not be updated. Please try again.</p>}
+          </div>
+        </section>
+
+        <section aria-labelledby="account-recent-heading" className="mt-12">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">Your viewing trail</p>
+              <h2 id="account-recent-heading" className="mt-2 font-serif text-3xl text-[var(--text)] sm:text-4xl">Recently watched</h2>
+            </div>
+          </div>
+          <div className="account-welcome-card mt-7 rounded-3xl border border-[var(--line)] p-5 sm:p-8">
+            {recentLoading ? (
+              <p className="py-10 text-center text-sm text-[var(--muted)]">Gathering your recently watched titles…</p>
+            ) : recentTitles.length ? (
+              <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {recentTitles.map((item, index) => (
+                  <motion.article key={item.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.24) }} className="group min-w-0">
+                    <a href={'/title/' + item.id + '?from=' + encodeURIComponent(window.location.pathname + window.location.search + window.location.hash)} className="group block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]">
+                      {item.poster_url
+                        ? <img src={item.poster_url} alt={'Poster for ' + item.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-lg transition duration-300 group-hover:-translate-y-1" loading="lazy" />
+                        : <div className={'catalogue-artwork home-artwork artwork-' + (index % 4)}><span className="rounded-full border border-white/25 bg-black/20 px-2 py-1 text-[8px] uppercase tracking-[0.16em] text-white">{item.kind}</span></div>}
+                      <h3 className="mt-3 font-serif text-lg leading-tight text-[var(--text)] group-hover:text-[var(--accent)]">{item.title}</h3>
+                    </a>
+                    <p className="mt-1 text-[10px] text-[var(--muted)]">{item.year} · {item.genre}</p>
+                  </motion.article>
+                ))}
+              </div>
+            ) : (
+              <p className="py-10 text-center text-sm leading-6 text-[var(--muted)]">Titles you open while signed in will appear here, newest first.</p>
+            )}
           </div>
         </section>
 
