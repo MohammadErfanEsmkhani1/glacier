@@ -11,6 +11,7 @@ import CategoryPage from './components/CategoryPage'
 import AuthPage from './components/AuthPage'
 import AccountPage from './components/AccountPage'
 import AdminPage from './components/AdminPage'
+import TitlePage from './components/TitlePage'
 import { applyPalette, defaultSeo, getPalette, readAllSeo } from './lib/siteStorage'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import './index.css'
@@ -117,7 +118,9 @@ function App() {
   }, [path])
 
   const onToggleMode = () => setMode((current) => current === 'dark' ? 'light' : 'dark')
-  const isSpecialPage = specialPaths.includes(path)
+  const titleMatch = path.match(/^\/title\/([0-9a-f-]+)$/i)
+  const isTitlePage = Boolean(titleMatch)
+  const isSpecialPage = specialPaths.includes(path) || isTitlePage
 
   return (
     <div className={isSpecialPage ? 'app-shell min-h-screen' : 'site-home min-h-screen'}>
@@ -127,6 +130,7 @@ function App() {
       {(path === '/login' || path === '/register') && <AuthPage key={path} initialMode={path === '/register' ? 'register' : 'login'} />}
       {path === '/account' && <AccountPage />}
       {path === '/admin' && <AdminRoute />}
+      {titleMatch && <TitlePage titleId={titleMatch[1]} />}
       {!isSpecialPage && <main><Hero /><Exhibit /><Visit /><Mission /></main>}
       <SiteFooter />
     </div>
