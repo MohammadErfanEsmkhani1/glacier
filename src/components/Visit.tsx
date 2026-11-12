@@ -34,9 +34,11 @@ export default function Visit() {
     void loadPersonalTitles()
     const refresh = () => { void loadPersonalTitles() }
     window.addEventListener('glacier:favorites-updated', refresh)
+    window.addEventListener('glacier:recently-watched-updated', refresh)
     return () => {
       active = false
       window.removeEventListener('glacier:favorites-updated', refresh)
+      window.removeEventListener('glacier:recently-watched-updated', refresh)
     }
   }, [userId])
 
