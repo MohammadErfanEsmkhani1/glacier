@@ -191,3 +191,54 @@
 @media (max-width: 520px) {
   .home-header-link-centered { top:50%; }
 }
+
+
+/* Full-screen first-view loader: visible content is revealed only after it is ready. */
+.viewport-preloader {
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:grid;
+  place-items:center;
+  background:var(--page,#0b1626);
+  color:var(--text,#edf4f5);
+}
+.viewport-preloader-content {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:.8rem;
+}
+.viewport-preloader-mark {
+  color:var(--accent);
+  font-family:Georgia,serif;
+  font-size:2.2rem;
+  line-height:1;
+}
+.viewport-preloader-brand {
+  color:var(--text);
+  font-size:.72rem;
+  font-weight:600;
+  letter-spacing:.3em;
+  text-transform:uppercase;
+}
+.viewport-preloader-spinner {
+  width:1.75rem;
+  height:1.75rem;
+  margin-top:1.25rem;
+  border:2px solid color-mix(in srgb,var(--accent) 22%,transparent);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:glacier-preloader-spin .85s linear infinite;
+}
+.viewport-preloader-caption {
+  color:var(--muted);
+  font-size:.68rem;
+  letter-spacing:.08em;
+}
+@keyframes glacier-preloader-spin {
+  to { transform:rotate(360deg); }
+}
+@media (prefers-reduced-motion:reduce) {
+  .viewport-preloader-spinner { animation-duration:2.4s; }
+}
