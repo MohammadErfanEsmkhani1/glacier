@@ -32,13 +32,23 @@ export default function Visit() {
       setHistoryLoading(false)
     }
     void loadPersonalTitles()
-    const refresh = () => { void loadPersonalTitles() }
-    window.addEventListener('glacier:favorites-updated', refresh)
-    window.addEventListener('glacier:recently-watched-updated', refresh)
+    const refreshRecent = () => {
+      void supabase.from('user_recently_watched').select('title_id').eq('user_id', userId).order('watched_at', { ascending: false }).limit(5)
+        .then(({ data }) => { if (active) setRecentIds((data ?? []).map((row) => row.title_id)) })
+    }
+    const onFavoriteChange = (event: Event) => {
+      const change = (event as CustomEvent<{ userId: string; titleId: string; saved: boolean }>).detail
+      if (!change || change.userId !== userId) return
+      setFavoriteIds((current) => change.saved
+        ? [change.titleId, ...current.filter((id) => id !== change.titleId)].slice(0, 5)
+        : current.filter((id) => id !== change.titleId))
+    }
+    window.addEventListener('glacier:favorites-updated', onFavoriteChange)
+    window.addEventListener('glacier:recently-watched-updated', refreshRecent)
     return () => {
       active = false
-      window.removeEventListener('glacier:favorites-updated', refresh)
-      window.removeEventListener('glacier:recently-watched-updated', refresh)
+      window.removeEventListener('glacier:favorites-updated', onFavoriteChange)
+      window.removeEventListener('glacier:recently-watched-updated', refreshRecent)
     }
   }, [userId])
 
