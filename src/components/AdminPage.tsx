@@ -19,27 +19,40 @@ export default function AdminPage() {
   const [palette, setPalette] = useState<Palette>(getPalette())
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
+  const [initialDataReady, setInitialDataReady] = useState(false)
   const sortedTitles = useMemo(() => [...titles].sort((a, b) => a.title.localeCompare(b.title)), [titles])
   const updateDraft = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((current) => ({ ...current, [key]: value }))
 
   const loadData = async () => {
-    if (!supabase) return
-    const [catalogResult, sectionResult, pageResult, settingsResult] = await Promise.all([
-      supabase.from('titles').select('id,title,kind,release_year,genre,description,poster_url,featured').order('sort_order').order('title'),
-      supabase.from('site_sections').select('section_key,title,description'),
-      supabase.from('site_pages').select('slug,seo_title,seo_description'),
-      supabase.from('site_settings').select('palette').eq('id', true).maybeSingle(),
-    ])
-    const failure = catalogResult.error || sectionResult.error || pageResult.error || settingsResult.error
-    if (failure) { setNotice('Could not load saved settings: ' + failure.message); return }
-    setTitles((catalogResult.data ?? []).map((item) => ({ id: item.id, title: item.title, kind: item.kind, year: item.release_year ?? 0, genre: item.genre, description: item.description, poster_url: item.poster_url, featured: item.featured })))
-    const nextCopy = { ...defaultCopy }
-    for (const item of sectionResult.data ?? []) nextCopy[item.section_key] = { title: item.title, description: item.description }
-    setCopy(nextCopy)
-    const nextSeo = { ...defaultSeo }
-    for (const item of pageResult.data ?? []) nextSeo[item.slug] = { title: item.seo_title, description: item.seo_description }
-    setSeo(nextSeo)
-    if (settingsResult.data?.palette) setPalette(settingsResult.data.palette as Palette)
+    if (!supabase) {
+      setInitialDataReady(true)
+      return
+    }
+    try {
+      const [catalogResult, sectionResult, pageResult, settingsResult] = await Promise.all([
+        supabase.from('titles').select('id,title,kind,release_year,genre,description,poster_url,featured').order('sort_order').order('title'),
+        supabase.from('site_sections').select('section_key,title,description'),
+        supabase.from('site_pages').select('slug,seo_title,seo_description'),
+        supabase.from('site_settings').select('palette').eq('id', true).maybeSingle(),
+      ])
+      const failure = catalogResult.error || sectionResult.error || pageResult.error || settingsResult.error
+      if (failure) {
+        setNotice('Could not load saved settings: ' + failure.message)
+        return
+      }
+      setTitles((catalogResult.data ?? []).map((item) => ({ id: item.id, title: item.title, kind: item.kind, year: item.release_year ?? 0, genre: item.genre, description: item.description, poster_url: item.poster_url, featured: item.featured })))
+      const nextCopy = { ...defaultCopy }
+      for (const item of sectionResult.data ?? []) nextCopy[item.section_key] = { title: item.title, description: item.description }
+      setCopy(nextCopy)
+      const nextSeo = { ...defaultSeo }
+      for (const item of pageResult.data ?? []) nextSeo[item.slug] = { title: item.seo_title, description: item.seo_description }
+      setSeo(nextSeo)
+      if (settingsResult.data?.palette) setPalette(settingsResult.data.palette as Palette)
+    } catch (error) {
+      setNotice('Could not load saved settings: ' + (error instanceof Error ? error.message : 'Please try again.'))
+    } finally {
+      setInitialDataReady(true)
+    }
   }
 
   useEffect(() => { void loadData() }, [])
@@ -101,7 +114,7 @@ export default function AdminPage() {
   )
 
   return (
-    <main className="min-h-screen px-5 pb-24 pt-36 sm:px-8">
+    <main data-preloader-pending={initialDataReady ? undefined : 'true'} className="min-h-screen px-5 pb-24 pt-36 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">Glacier control room</p>
         <div className="mt-3 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
