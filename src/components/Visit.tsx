@@ -1,27 +1,67 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import SectionHeading from './SectionHeading'
+import { useCatalog } from '../lib/catalog'
+import { useFavorites } from '../lib/favorites'
 import { supabase } from '../lib/supabase'
 
 export default function Visit() {
-  const [signedIn, setSignedIn] = useState(false)
+  const catalog = useCatalog()
+  const { userId } = useFavorites()
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([])
+  const [recentIds, setRecentIds] = useState<string[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
 
   useEffect(() => {
-    if (!supabase) return
-    let active = true
-    const sync = (session: { user: { id: string } } | null) => {
-      if (active) setSignedIn(Boolean(session))
+    if (!supabase || !userId) {
+      setFavoriteIds([])
+      setRecentIds([])
+      setHistoryLoading(false)
+      return
     }
-    void supabase.auth.getSession().then(({ data }) => sync(data.session))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => sync(session))
-    return () => { active = false; subscription.unsubscribe() }
-  }, [])
+    let active = true
+    setHistoryLoading(true)
+    const loadPersonalTitles = async () => {
+      const [favorites, recent] = await Promise.all([
+        supabase.from('user_favorites').select('title_id').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
+        supabase.from('user_recently_watched').select('title_id').eq('user_id', userId).order('watched_at', { ascending: false }).limit(5),
+      ])
+      if (!active) return
+      setFavoriteIds((favorites.data ?? []).map((row) => row.title_id))
+      setRecentIds((recent.data ?? []).map((row) => row.title_id))
+      setHistoryLoading(false)
+    }
+    void loadPersonalTitles()
+    const refresh = () => { void loadPersonalTitles() }
+    window.addEventListener('glacier:favorites-updated', refresh)
+    return () => {
+      active = false
+      window.removeEventListener('glacier:favorites-updated', refresh)
+    }
+  }, [userId])
+
+  const favoriteTitles = favoriteIds.map((id) => catalog.find((item) => item.id === id)).filter((item) => item !== undefined)
+  const recentTitles = recentIds.map((id) => catalog.find((item) => item.id === id)).filter((item) => item !== undefined)
+  const signedIn = Boolean(userId)
+
+  const titleGrid = (items: typeof catalog) => (
+    <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-5">
+      {items.map((item, index) => (
+        <motion.article key={item.id} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.35, delay: index * 0.04 }} className="min-w-0">
+          {item.poster_url ? <img src={item.poster_url} alt={'Poster for ' + item.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-lg" loading="lazy" /> : <div className={'catalogue-artwork home-artwork artwork-' + (index % 4)}><span className="rounded-full border border-white/25 bg-black/20 px-2 py-1 text-[8px] uppercase tracking-[0.16em] text-white">{item.kind}</span></div>}
+          <h3 className="mt-3 font-serif text-lg leading-tight text-[var(--text)]">{item.title}</h3>
+          <p className="mt-1 text-[10px] text-[var(--muted)]">{item.year} · {item.genre}</p>
+        </motion.article>
+      ))}
+    </div>
+  )
 
   return (
     <section id="visit" className="relative scroll-mt-0 overflow-hidden border-t border-white/[0.07] bg-[#0b1626] px-6 py-24 md:px-10 md:py-32">
       <div aria-hidden="true" className="pointer-events-none absolute -right-40 top-0 h-[30rem] w-[30rem] rounded-full bg-[#78d8ce]/[0.10] blur-[110px]" />
       <div aria-hidden="true" className="pointer-events-none absolute -bottom-48 -left-40 h-[26rem] w-[26rem] rounded-full bg-[#f18f80]/[0.07] blur-[110px]" />
       <div className="relative mx-auto max-w-6xl">
+        {!signedIn ? (
         <SectionHeading
           eyebrow="Your personal space"
           title="My movies"
@@ -66,7 +106,26 @@ export default function Visit() {
             <p className="mt-5 text-xs leading-5 text-slate-300/55">You can still explore recommendations without an account.</p>
           </div>
         </motion.div>
+        ) : (
+          <>
+            <SectionHeading eyebrow="Your personal space" title="My movies" intro="Your latest watches and the five titles you most recently saved." />
+            <section aria-labelledby="recently-watched-heading" className="mt-14">
+              <div className="mb-6"><p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">Pick up where you left off</p><h3 id="recently-watched-heading" className="mt-2 font-serif text-3xl text-[var(--text)]">Recently watched</h3></div>
+              <div className="rounded-3xl border border-[var(--line)] bg-[var(--surface)]/60 p-5 sm:p-8">
+                {historyLoading ? <p className="py-8 text-center text-sm text-[var(--muted)]">Loading your titles…</p> : recentTitles.length ? titleGrid(recentTitles) : <p className="py-8 text-center text-sm leading-6 text-[var(--muted)]">Your recently watched titles will appear here as you visit title pages.</p>}
+              </div>
+            </section>
+            <section aria-labelledby="latest-favorites-heading" className="mt-12">
+              <div className="mb-6 flex items-end justify-between gap-4">
+                <div><p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">Freshly saved</p><h3 id="latest-favorites-heading" className="mt-2 font-serif text-3xl text-[var(--text)]">Your 5 latest favorites</h3></div>
+                <a href="/account" className="text-xs font-medium text-[var(--muted)] transition hover:text-[var(--text)]">View all ↗</a>
+              </div>
+              <div className="rounded-3xl border border-[var(--line)] bg-[var(--surface)]/60 p-5 sm:p-8">
+                {historyLoading ? <p className="py-8 text-center text-sm text-[var(--muted)]">Loading your favorites…</p> : favoriteTitles.length ? titleGrid(favoriteTitles) : <p className="py-8 text-center text-sm leading-6 text-[var(--muted)]">Your favorite titles will appear here when you save them from the catalogue.</p>}
+              </div>
+            </section>
+          </>
+        )}
       </div>
     </section>
   )
-}
