@@ -125,7 +125,7 @@ export function useCatalogReady() {
 export function slugifyTitle(title: string) {
   const slug = title
     .normalize('NFKD')
-    .replace(/\\p{M}/gu, '')
+    .replace(/\p{M}/gu, '')
     .toLowerCase()
     .replace(/&/g, ' and ')
     .replace(/[^a-z0-9]+/g, '-')
