@@ -119,17 +119,25 @@ export default function ViewportPreloader() {
 
   useEffect(() => {
     let active = true
-    const safetyTimeout = window.setTimeout(() => {
-      if (active) setVisible(false)
-    }, TOTAL_TIMEOUT_MS)
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const reveal = () => {
+      if (!active) return
+      document.body.style.overflow = previousOverflow
+      setVisible(false)
+    }
+
+    const safetyTimeout = window.setTimeout(reveal, TOTAL_TIMEOUT_MS)
 
     void waitForViewport().finally(() => {
-      if (active) setVisible(false)
+      reveal()
       window.clearTimeout(safetyTimeout)
     })
 
     return () => {
       active = false
+      document.body.style.overflow = previousOverflow
       window.clearTimeout(safetyTimeout)
     }
   }, [])
