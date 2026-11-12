@@ -93,7 +93,6 @@ function waitForVideo(video: HTMLVideoElement) {
 
     video.addEventListener('loadeddata', finish, { once: true })
     video.addEventListener('error', finish, { once: true })
-    video.load()
     if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) finish()
   })
 }
