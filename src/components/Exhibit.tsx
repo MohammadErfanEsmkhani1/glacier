@@ -7,14 +7,10 @@ import { useFavorites } from '../lib/favorites'
 
 export default function Exhibit() {
   const [filter, setFilter] = useState<'all' | 'movie' | 'series'>('all')
-  const [query, setQuery] = useState('')
   const titles = useCatalog().filter((item) => item.featured)
   const copy = useSectionCopy('recommendations')
   const { userId, favoriteIds, toggleFavorite, error: favoriteError } = useFavorites()
-  const visible = useMemo(() => titles.filter((item) => {
-    const term = query.trim().toLowerCase()
-    return (filter === 'all' || item.kind === filter) && (!term || (item.title + ' ' + item.genre + ' ' + item.year).toLowerCase().includes(term))
-  }), [titles, filter, query])
+  const visible = useMemo(() => titles.filter((item) => filter === 'all' || item.kind === filter), [titles, filter])
 
   return (
     <section id="exhibit" className="recommendations-atmosphere scroll-mt-0 px-6 py-24 md:px-10 md:py-32">
@@ -26,10 +22,6 @@ export default function Exhibit() {
               <button key={value} type="button" onClick={() => setFilter(value)} aria-pressed={filter === value} className={filter === value ? 'recommendation-filter is-active' : 'recommendation-filter'}>{label}</button>
             ))}
           </div>
-          <label className="flex w-full items-center gap-3 rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 py-3 sm:max-w-[290px]">
-            <span aria-hidden="true" className="text-lg text-[var(--accent)]">⌕</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search titles or genres" className="glacier-focus w-full bg-transparent text-sm text-[var(--text)] outline-none placeholder:text-[var(--muted)]" />
-          </label>
         </div>
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-6 lg:grid-cols-6">
           {visible.map((item, index) => (
@@ -49,7 +41,7 @@ export default function Exhibit() {
           ))}
         </div>
         {favoriteError && <p role="status" className="mt-4 text-xs text-[var(--muted)]">Favorites could not be updated. Please try again.</p>}
-        {visible.length === 0 && <p className="mt-8 rounded-2xl border border-dashed border-[var(--line)] p-9 text-center text-sm text-[var(--muted)]">No recommended titles match your search.</p>}
+        {visible.length === 0 && <p className="mt-8 rounded-2xl border border-dashed border-[var(--line)] p-9 text-center text-sm text-[var(--muted)]">No titles in this category yet.</p>}
         <a href="/categories" className="mx-auto mt-10 flex w-fit rounded-full border border-[var(--line)] px-6 py-3 text-sm font-medium text-[var(--text)] transition hover:border-[var(--accent)] hover:bg-[var(--surface)]">Browse all categories</a>
       </div>
     </section>
