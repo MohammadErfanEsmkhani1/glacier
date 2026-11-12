@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { getTitleUrl, useCatalog, useCatalogReady, type CatalogKind } from '../lib/catalog'
-import { useSectionCopy } from '../lib/siteStorage'
+import { useSectionCopy, useSectionCopyReady } from '../lib/siteStorage'
 import { useFavorites } from '../lib/favorites'
 
 type Filter = 'all' | CatalogKind
@@ -12,6 +12,7 @@ export default function CategoryPage() {
   const titles = useCatalog()
   const catalogReady = useCatalogReady()
   const copy = useSectionCopy('categories')
+  const copyReady = useSectionCopyReady('categories')
   const { userId, favoriteIds, toggleFavorite, loading: favoritesLoading, error: favoriteError } = useFavorites()
   const filtered = useMemo(() => titles.filter((item) => {
     const term = query.trim().toLowerCase()
@@ -21,7 +22,7 @@ export default function CategoryPage() {
   const heading = kind === 'all' ? 'Everything' : kind === 'movie' ? 'Movies' : 'Series'
 
   return (
-    <main data-preloader-pending={catalogReady && !favoritesLoading ? undefined : 'true'} className="min-h-screen px-5 pb-24 pt-36 sm:px-8">
+    <main data-preloader-pending={catalogReady && copyReady && !favoritesLoading ? undefined : 'true'} className="min-h-screen px-5 pb-24 pt-36 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <motion.header initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">Glacier catalogue · made for curious minds</p>
