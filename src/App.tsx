@@ -1,17 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import Navbar from './components/Navbar'
-
-
-
-
 import SiteFooter from './components/SiteFooter'
 import SiteHeader from './components/SiteHeader'
-
-
-
-
-
 import ViewportPreloader from './components/ViewportPreloader'
 import { applyPalette, defaultSeo, getPalette, readAllSeo } from './lib/siteStorage'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
