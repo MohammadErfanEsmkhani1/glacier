@@ -16,6 +16,43 @@ export type CatalogTitle = {
 
 export const starterTitles: CatalogTitle[] = []
 
+let catalogHasLoaded = false
+
+function markCatalogLoaded() {
+  catalogHasLoaded = true
+  window.dispatchEvent(new Event('glacier:catalogue-ready'))
+}
+
+export function slugifyTitle(title: string) {
+  const slug = title
+    .normalize('NFKD')
+    .replace(/[\\u0300-\\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return slug || 'title'
+}
+
+export function getTitleUrl(item: Pick<CatalogTitle, 'id' | 'title'>, from?: string) {
+  const params = new URLSearchParams({ id: item.id })
+  if (from) params.set('from', from)
+  return `/title/${slugifyTitle(item.title)}?${params.toString()}`
+}
+
+export function useCatalogReady() {
+  const [ready, setReady] = useState(catalogHasLoaded)
+
+  useEffect(() => {
+    const onReady = () => setReady(true)
+    window.addEventListener('glacier:catalogue-ready', onReady)
+    if (catalogHasLoaded) setReady(true)
+    return () => window.removeEventListener('glacier:catalogue-ready', onReady)
+  }, [])
+
+  return ready
+}
+
 function readLocalCatalog(): CatalogTitle[] {
   try {
     const saved = localStorage.getItem('glacier-catalogue')
@@ -40,7 +77,10 @@ export function useCatalog() {
     let active = true
     const load = async () => {
       if (!isSupabaseConfigured || !supabase) {
-        if (active) setTitles(readLocalCatalog())
+        if (active) {
+          setTitles(readLocalCatalog())
+          markCatalogLoaded()
+        }
         return
       }
       const { data, error } = await supabase
@@ -51,6 +91,7 @@ export function useCatalog() {
       if (!active) return
       if (error) {
         console.error('Glacier catalogue could not be loaded:', error.message)
+        markCatalogLoaded()
         return
       }
       setTitles((data ?? []).map((item) => ({
@@ -64,6 +105,7 @@ export function useCatalog() {
         featured: item.featured,
         createdAt: item.created_at,
       })))
+      markCatalogLoaded()
     }
     void load()
     const refresh = () => { void load() }
