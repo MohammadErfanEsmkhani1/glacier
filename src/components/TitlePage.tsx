@@ -66,7 +66,7 @@ export default function TitlePage({ titleId }: TitlePageProps) {
   const returnTo = requestedReturn && requestedReturn.startsWith('/') && !requestedReturn.startsWith('//') && !requestedReturn.startsWith('/title/') ? requestedReturn : '/categories'
 
   return (
-    <main data-preloader-pending={loading ? 'true' : undefined} className="min-h-screen px-5 pb-24 pt-36 sm:px-8">
+    <main data-preloader-pending={loading || favoritesLoading ? 'true' : undefined} className="min-h-screen px-5 pb-24 pt-36 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <a href={returnTo} className="inline-flex items-center gap-2 text-sm text-[var(--muted)] transition hover:text-[var(--text)]">← Back</a>
         {loading ? (
