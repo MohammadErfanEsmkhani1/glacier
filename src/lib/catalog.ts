@@ -11,6 +11,7 @@ export type CatalogTitle = {
   description: string
   poster_url: string | null
   featured: boolean
+  createdAt?: string
 }
 
 export const starterTitles: CatalogTitle[] = []
@@ -44,7 +45,7 @@ export function useCatalog() {
       }
       const { data, error } = await supabase
         .from('titles')
-        .select('id,title,kind,release_year,genre,description,poster_url,featured')
+        .select('id,title,kind,release_year,genre,description,poster_url,featured,created_at')
         .order('sort_order', { ascending: true })
         .order('title', { ascending: true })
       if (!active) return
@@ -61,6 +62,7 @@ export function useCatalog() {
         description: item.description,
         poster_url: item.poster_url,
         featured: item.featured,
+        createdAt: item.created_at,
       })))
     }
     void load()
