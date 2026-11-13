@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { getTitleUrl, useCatalog, useCatalogReady } from '../lib/catalog'
 import { useFavorites } from '../lib/favorites'
 import { supabase } from '../lib/supabase'
+import { getPosterImageUrl } from '../lib/imagekit'
 
 export default function AccountPage() {
   const catalog = useCatalog()
@@ -133,7 +134,7 @@ export default function AccountPage() {
                   <motion.article key={item.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.24) }} className="group min-w-0">
                     <a href={getTitleUrl(item)} className="group block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]">
                       {item.poster_url
-                        ? <img src={item.poster_url} alt={'Poster for ' + item.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-lg transition duration-300 group-hover:-translate-y-1" loading="lazy" />
+                        ? <img src={getPosterImageUrl(item.poster_url, 360)} alt={'Poster for ' + item.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-lg transition duration-300 group-hover:-translate-y-1" loading="lazy" />
                         : <div className={'catalogue-artwork home-artwork artwork-' + (index % 4)}><span className="rounded-full border border-white/25 bg-black/20 px-2 py-1 text-[8px] uppercase tracking-[0.16em] text-white">{item.kind}</span></div>}
                       <h3 className="mt-3 font-serif text-lg leading-tight text-[var(--text)] group-hover:text-[var(--accent)]">{item.title}</h3>
                     </a>
@@ -172,7 +173,7 @@ export default function AccountPage() {
                   <motion.article key={item.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.24) }} className="group min-w-0">
                     <a href={getTitleUrl(item)} className="group block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]">
                       {item.poster_url
-                        ? <img src={item.poster_url} alt={'Poster for ' + item.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-lg transition duration-300 group-hover:-translate-y-1" loading="lazy" />
+                        ? <img src={getPosterImageUrl(item.poster_url, 360)} alt={'Poster for ' + item.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-lg transition duration-300 group-hover:-translate-y-1" loading="lazy" />
                         : <div className={'catalogue-artwork home-artwork artwork-' + (index % 4)}><span className="rounded-full border border-white/25 bg-black/20 px-2 py-1 text-[8px] uppercase tracking-[0.16em] text-white">{item.kind}</span></div>}
                       <h3 className="mt-3 font-serif text-lg leading-tight text-[var(--text)] group-hover:text-[var(--accent)]">{item.title}</h3>
                     </a>
