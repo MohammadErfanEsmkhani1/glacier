@@ -102,6 +102,13 @@
   object-fit:cover;
   object-position:center bottom;
   background:#0b1626;
+  opacity:0;
+  transition:opacity 1600ms ease-in-out;
+}
+.hero-video-layer-active { opacity:1; }
+.hero-video-layer-next { opacity:0; }
+@media (prefers-reduced-motion:reduce) {
+  .hero-video-layer { transition:none; }
 }
 .hero-atmosphere {
   position:absolute;
