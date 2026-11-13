@@ -96,81 +96,44 @@
 }
 
 
-/* Lightweight sky and animated SVG flock replace the 14 MB background video. */
-.hero-bird-sky {
+/* Restrained fallback while the original hero video is deferred. */
+.hero-video-fallback {
   position:absolute;
   inset:0;
+  display:grid;
+  place-items:start end;
   overflow:hidden;
-  pointer-events:none;
-  color:rgba(8,19,31,.78);
   background:
-    radial-gradient(ellipse at 72% 12%,rgba(247,224,190,.82),transparent 39%),
-    radial-gradient(ellipse at 16% 23%,rgba(113,151,170,.58),transparent 48%),
-    linear-gradient(180deg,#7898aa 0%,#afbbc0 48%,#dfcbb2 100%);
+    radial-gradient(ellipse at 74% 15%,rgba(120,216,206,.10),transparent 42%),
+    radial-gradient(ellipse at 48% 92%,rgba(162,141,255,.08),transparent 48%),
+    linear-gradient(180deg,#142b3d 0%,#0b1626 100%);
 }
-.hero-bird-sky::before {
-  content:"";
+.hero-video-fallback-wings {
   position:absolute;
-  inset:-8%;
-  opacity:.58;
-  filter:blur(26px);
-  background:
-    radial-gradient(ellipse 36% 9% at 18% 37%,rgba(255,255,255,.34),transparent 100%),
-    radial-gradient(ellipse 29% 8% at 63% 32%,rgba(255,255,255,.26),transparent 100%),
-    radial-gradient(ellipse 34% 10% at 88% 47%,rgba(255,255,255,.22),transparent 100%);
-  animation:glacier-sky-haze 38s ease-in-out infinite alternate;
+  top:25%;
+  right:18%;
+  width:clamp(64px,7vw,104px);
+  stroke:rgba(237,244,245,.3);
+  stroke-width:1.25;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  animation:glacier-fallback-wings 7.5s ease-in-out infinite alternate;
 }
-.hero-bird {
-  position:absolute;
-  display:block;
-  height:auto;
-  overflow:visible;
-  color:currentColor;
-  filter:drop-shadow(0 1px 2px rgba(255,255,255,.12));
-  transform-origin:center;
-  animation:glacier-bird-flight var(--flight-duration,12s) ease-in-out var(--flight-delay,0s) infinite alternate;
+@keyframes glacier-fallback-wings {
+  from { transform:translate3d(0,2px,0) scale(.98); opacity:.3; }
+  to { transform:translate3d(0,-3px,0) scale(1.03); opacity:.52; }
 }
-.hero-bird-wing-left,
-.hero-bird-wing-right {
-  transform-box:fill-box;
-  transform-origin:50% 100%;
+.hero-video {
+  opacity:0;
+  transition:opacity 1100ms ease;
 }
-.hero-bird-wing-left {
-  animation:glacier-bird-flap-left var(--wing-duration,1.6s) ease-in-out var(--flight-delay,0s) infinite;
-}
-.hero-bird-wing-right {
-  animation:glacier-bird-flap-right var(--wing-duration,1.6s) ease-in-out var(--flight-delay,0s) infinite;
-}
-@keyframes glacier-bird-flight {
-  0% { transform:translate3d(0,0,0) scale(.94); }
-  100% { transform:translate3d(var(--flight-distance,18px),var(--flight-lift,-12px),0) scale(1.04); }
-}
-@keyframes glacier-bird-flap-left {
-  0%,100% { transform:rotate(-9deg) scaleY(1); }
-  50% { transform:rotate(23deg) scaleY(.68); }
-}
-@keyframes glacier-bird-flap-right {
-  0%,100% { transform:rotate(9deg) scaleY(1); }
-  50% { transform:rotate(-23deg) scaleY(.68); }
-}
-@keyframes glacier-sky-haze {
-  from { transform:translate3d(-1.2%,0,0) scale(1); }
-  to { transform:translate3d(1.2%,-.6%,0) scale(1.04); }
-}
-@media (max-width:640px) {
-  .hero-bird:nth-child(4n + 1) { display:none; }
-}
+.hero-video.is-playing { opacity:1; }
 @media (prefers-reduced-motion:reduce) {
-  .hero-bird,
-  .hero-bird-wing-left,
-  .hero-bird-wing-right,
-  .hero-bird-sky::before {
-    animation:none !important;
-  }
+  .hero-video-fallback-wings { animation:none; }
+  .hero-video { display:none; }
 }
 
-
-/* The hero's lightweight SVG flock keeps its identity colours tied to the selected palette. */
+/* Glacier hero typography and subtle background treatment. */
 .hero-title {
   background-image: linear-gradient(90deg,var(--hero-gradient-from),var(--hero-gradient-mid),var(--hero-gradient-to));
   background-clip: text;
