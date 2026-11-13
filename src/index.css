@@ -97,14 +97,20 @@
 
 
 /* Calm, cinematic CSS sky with a sparse three-mark wing motif. */
+/* Keep the original MP4 behind a lightweight poster and translucent sky treatment. */
+.hero-video-layer {
+  object-fit:cover;
+  object-position:center bottom;
+  background:#0b1626;
+}
 .hero-atmosphere {
   position:absolute;
   inset:0;
   overflow:hidden;
   background:
-    radial-gradient(ellipse at 73% 19%,rgba(120,216,206,.18),transparent 38%),
-    radial-gradient(ellipse at 21% 28%,rgba(162,141,255,.14),transparent 42%),
-    linear-gradient(155deg,#263e50 0%,#172a3d 48%,#0b1626 100%);
+    radial-gradient(ellipse at 73% 19%,rgba(120,216,206,.16),transparent 38%),
+    radial-gradient(ellipse at 21% 28%,rgba(162,141,255,.13),transparent 42%),
+    linear-gradient(155deg,rgba(38,62,80,.27) 0%,rgba(23,42,61,.34) 48%,rgba(11,22,38,.46) 100%);
 }
 .hero-atmosphere-clouds {
   position:absolute;
