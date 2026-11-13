@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion'
-import BirdSky from './BirdSky'
+import DeferredHeroVideo from './DeferredHeroVideo'
 import { useSectionCopy, useSectionCopyReady } from '../lib/siteStorage'
 export default function Hero() {
   const copy = useSectionCopy('homeHero')
   const copyReady = useSectionCopyReady('homeHero')
   return (
     <section id="home" data-preloader-pending={copyReady ? undefined : 'true'} className="relative flex min-h-[100svh] w-full flex-col overflow-hidden bg-[var(--page)]">
-      <BirdSky />
+      <DeferredHeroVideo />
       <div aria-hidden="true" className="hero-theme-overlay pointer-events-none absolute inset-0" />
       <div aria-hidden="true" className="absolute inset-0 bg-black/25" />
       <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,.28)_0%,transparent_24%,transparent_61%,rgba(0,0,0,.48)_100%)]" />
