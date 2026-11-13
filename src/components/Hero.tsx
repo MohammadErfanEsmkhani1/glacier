@@ -1,12 +1,26 @@
 import { motion } from 'framer-motion'
-import DeferredHeroVideo from './DeferredHeroVideo'
+import type { CSSProperties } from 'react'
 import { useSectionCopy, useSectionCopyReady } from '../lib/siteStorage'
 export default function Hero() {
   const copy = useSectionCopy('homeHero')
   const copyReady = useSectionCopyReady('homeHero')
   return (
     <section id="home" data-preloader-pending={copyReady ? undefined : 'true'} className="relative flex min-h-[100svh] w-full flex-col overflow-hidden bg-[var(--page)]">
-      <DeferredHeroVideo />
+      <div className="hero-atmosphere absolute inset-0" aria-hidden="true">
+        <div className="hero-atmosphere-clouds" />
+        <svg className="hero-wing-pair hero-wing-one" viewBox="0 0 100 48" aria-hidden="true">
+          <path className="hero-wing-left" d="M50 34 C37 17 20 10 7 14 C22 14 37 23 49 39" />
+          <path className="hero-wing-right" d="M50 34 C63 17 80 10 93 14 C78 14 63 23 51 39" />
+        </svg>
+        <svg className="hero-wing-pair hero-wing-two" viewBox="0 0 100 48" aria-hidden="true">
+          <path className="hero-wing-left" d="M50 34 C37 17 20 10 7 14 C22 14 37 23 49 39" />
+          <path className="hero-wing-right" d="M50 34 C63 17 80 10 93 14 C78 14 63 23 51 39" />
+        </svg>
+        <svg className="hero-wing-pair hero-wing-three" viewBox="0 0 100 48" aria-hidden="true">
+          <path className="hero-wing-left" d="M50 34 C37 17 20 10 7 14 C22 14 37 23 49 39" />
+          <path className="hero-wing-right" d="M50 34 C63 17 80 10 93 14 C78 14 63 23 51 39" />
+        </svg>
+      </div>
       <div aria-hidden="true" className="hero-theme-overlay pointer-events-none absolute inset-0" />
       <div aria-hidden="true" className="absolute inset-0 bg-black/25" />
       <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,.28)_0%,transparent_24%,transparent_61%,rgba(0,0,0,.48)_100%)]" />
