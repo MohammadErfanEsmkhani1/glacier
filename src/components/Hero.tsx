@@ -21,7 +21,7 @@ export default function Hero() {
     const attachAndPlay = () => {
       if (disposed || sourceAttached) return
       sourceAttached = true
-      video.src = '/hero.mp4'
+      video.src = '/hero2.mp4'
       video.load()
       void video.play().catch(() => {
         // Keep the poster visible if autoplay is unavailable.
@@ -80,18 +80,6 @@ export default function Hero() {
       />
       <div className="hero-atmosphere absolute inset-0" aria-hidden="true">
         <div className="hero-atmosphere-clouds" />
-        <svg className="hero-wing-pair hero-wing-one" viewBox="0 0 100 48" aria-hidden="true">
-          <path className="hero-wing-left" d="M50 34 C37 17 20 10 7 14 C22 14 37 23 49 39" />
-          <path className="hero-wing-right" d="M50 34 C63 17 80 10 93 14 C78 14 63 23 51 39" />
-        </svg>
-        <svg className="hero-wing-pair hero-wing-two" viewBox="0 0 100 48" aria-hidden="true">
-          <path className="hero-wing-left" d="M50 34 C37 17 20 10 7 14 C22 14 37 23 49 39" />
-          <path className="hero-wing-right" d="M50 34 C63 17 80 10 93 14 C78 14 63 23 51 39" />
-        </svg>
-        <svg className="hero-wing-pair hero-wing-three" viewBox="0 0 100 48" aria-hidden="true">
-          <path className="hero-wing-left" d="M50 34 C37 17 20 10 7 14 C22 14 37 23 49 39" />
-          <path className="hero-wing-right" d="M50 34 C63 17 80 10 93 14 C78 14 63 23 51 39" />
-        </svg>
       </div>
       <div aria-hidden="true" className="hero-theme-overlay pointer-events-none absolute inset-0" />
       <div aria-hidden="true" className="absolute inset-0 bg-black/25" />
