@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { supabase } from '../lib/supabase'
 
 function HomeIcon() {
   return (
@@ -42,8 +43,23 @@ const items = [
   { key: 'mission', label: 'About Glacier', Icon: InfoIcon },
 ]
 
-export default function Navbar() {
+type NavbarProps = { mode: 'dark' | 'light'; onToggleMode: () => void }
+
+export default function Navbar({ mode, onToggleMode }: NavbarProps) {
   const [active, setActive] = useState('home')
+  const [signedIn, setSignedIn] = useState(false)
+  const [sessionReady, setSessionReady] = useState(!supabase)
+
+  useEffect(() => {
+    if (!supabase) { setSessionReady(true); return }
+    let mounted = true
+    const syncSession = (session: { user: { id: string } } | null) => {
+      if (mounted) { setSignedIn(Boolean(session)); setSessionReady(true) }
+    }
+    void supabase.auth.getSession().then(({ data }) => syncSession(data.session))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => syncSession(session))
+    return () => { mounted = false; subscription.unsubscribe() }
+  }, [])
 
   useEffect(() => {
     const sections = items
@@ -83,21 +99,49 @@ export default function Navbar() {
   }, [])
 
   const goTo = (key: string) => {
+    if (window.location.pathname !== '/') {
+      const destinations: Record<string, string> = {
+        home: '/',
+        exhibit: '/categories',
+        visit: '/login',
+        mission: '/#mission',
+      }
+      window.location.href = destinations[key] ?? '/'
+      return
+    }
+
     const section = document.getElementById(key)
     if (!section) return
 
+    // Align the selected section itself with the top edge of the viewport.
+    // Do not subtract a navbar offset: that was leaving a strip of the previous section visible.
+    const targetTop = section.getBoundingClientRect().top + window.scrollY
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    section.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+    window.scrollTo({ top: Math.max(0, targetTop), behavior: reduceMotion ? 'auto' : 'smooth' })
   }
 
   return (
-    <div className="fixed left-0 right-0 top-5 z-50 flex justify-center px-4">
+    <>
+      <header data-preloader-pending={sessionReady ? undefined : 'true'} className="appearance-header fixed left-4 right-4 top-5 z-50 flex items-center justify-between gap-2">
+        <a href={signedIn ? '/account' : '/register'} className="account-header-link">
+          <span>{signedIn ? 'Your Account' : 'Sign in / Create account ↗'}</span>
+          <svg className="account-header-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="8" r="3.5" /><path d="M5 20c.7-3.4 3.2-5.2 7-5.2s6.3 1.8 7 5.2" />
+          </svg>
+        </a>
+        <button type="button" onClick={onToggleMode} aria-pressed={mode === 'light'} className="theme-control" aria-label={mode === 'dark' ? 'Switch to light appearance' : 'Switch to dark appearance'} title={mode === 'dark' ? 'Switch to light appearance' : 'Switch to dark appearance'}>
+          <span className="theme-control-icon" aria-hidden="true">{mode === 'dark' ? '☼' : '☾'}</span>
+          <span className="text-xs font-medium">Dark/Light mode</span>
+          <span className={mode === 'light' ? 'theme-track is-on' : 'theme-track'} aria-hidden="true"><span /></span>
+        </button>
+      </header>
+      <div className="pointer-events-none fixed left-0 right-0 top-5 z-50 flex justify-center px-4">
       <motion.nav
         aria-label="Primary navigation"
         initial={{ opacity: 0, y: -14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.14] bg-white/[0.075] px-2.5 py-1.5 shadow-[0_12px_44px_rgba(0,0,0,.4),inset_0_1px_0_rgba(255,255,255,.16)] backdrop-blur-[22px]"
+        className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-white/[0.14] bg-white/[0.075] px-2.5 py-1.5 shadow-[0_12px_44px_rgba(0,0,0,.4),inset_0_1px_0_rgba(255,255,255,.16)] backdrop-blur-[22px]"
       >
         {items.map(({ key, label, Icon }) => {
           const isActive = active === key
@@ -109,7 +153,7 @@ export default function Navbar() {
               aria-label={label}
               title={label}
               aria-current={isActive ? 'location' : undefined}
-              className={`glacier-focus relative flex h-10 w-[60px] items-center justify-center rounded-full border-0 bg-transparent transition-colors ${isActive ? 'text-white' : 'text-white/65 hover:text-white'}`}
+              className={`glacier-focus relative flex h-10 w-[60px] cursor-pointer items-center justify-center rounded-full border-0 bg-transparent transition-colors ${isActive ? 'text-white' : 'text-white/65 hover:text-white'}`}
             >
               {isActive && (
                 <motion.span
@@ -123,6 +167,7 @@ export default function Navbar() {
           )
         })}
       </motion.nav>
-    </div>
+      </div>
+    </>
   )
 }
