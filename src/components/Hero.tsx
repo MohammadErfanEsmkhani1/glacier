@@ -3,10 +3,12 @@ import { motion } from 'framer-motion'
 import { useSectionCopy, useSectionCopyReady } from '../lib/siteStorage'
 export default function Hero() {
   const heroVideoRef = useRef<HTMLVideoElement>(null)
+  const heroVideoNextRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     const video = heroVideoRef.current
-    if (!video) return
+    const nextVideo = heroVideoNextRef.current
+    if (!video || !nextVideo) return
 
     const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
@@ -17,12 +19,56 @@ export default function Hero() {
     let idleHandle: number | null = null
     let fallbackHandle: number | null = null
     let observer: IntersectionObserver | null = null
+    let activeVideo = video
+    let standbyVideo = nextVideo
+    let transitionStarted = false
+    const fadeDuration = 1.6
+
+    const onTimeUpdate = (event: Event) => {
+      const current = event.currentTarget as HTMLVideoElement
+      if (disposed || current !== activeVideo || transitionStarted || !Number.isFinite(current.duration)) return
+      if (current.duration - current.currentTime <= fadeDuration) {
+        transitionStarted = true
+        standbyVideo.currentTime = 0
+        void standbyVideo.play().catch(() => {
+          standbyVideo.style.opacity = '0'
+          transitionStarted = false
+        })
+        standbyVideo.style.opacity = '1'
+      }
+    }
+
+    const onEnded = (event: Event) => {
+      if (disposed || event.currentTarget !== activeVideo) return
+      if (transitionStarted) {
+        activeVideo.pause()
+        activeVideo.style.opacity = '0'
+        standbyVideo.style.opacity = '1'
+        const previousVideo = activeVideo
+        activeVideo = standbyVideo
+        standbyVideo = previousVideo
+        standbyVideo.currentTime = 0
+      } else {
+        activeVideo.currentTime = 0
+        void activeVideo.play().catch(() => {
+          // Keep the poster visible if playback is unavailable.
+        })
+      }
+      transitionStarted = false
+    }
+
+    video.addEventListener('timeupdate', onTimeUpdate)
+    nextVideo.addEventListener('timeupdate', onTimeUpdate)
+    video.addEventListener('ended', onEnded)
+    nextVideo.addEventListener('ended', onEnded)
 
     const attachAndPlay = () => {
       if (disposed || sourceAttached) return
       sourceAttached = true
       video.src = '/hero2.mp4'
+      nextVideo.src = '/hero2.mp4'
       video.load()
+      nextVideo.load()
       void video.play().catch(() => {
         // Keep the poster visible if autoplay is unavailable.
       })
@@ -55,6 +101,12 @@ export default function Hero() {
     return () => {
       disposed = true
       observer?.disconnect()
+      video.removeEventListener('timeupdate', onTimeUpdate)
+      nextVideo.removeEventListener('timeupdate', onTimeUpdate)
+      video.removeEventListener('ended', onEnded)
+      nextVideo.removeEventListener('ended', onEnded)
+      video.pause()
+      nextVideo.pause()
       const idleWindow = window as Window & {
         cancelIdleCallback?: (handle: number) => void
       }
@@ -69,12 +121,20 @@ export default function Hero() {
     <section id="home" data-preloader-pending={copyReady ? undefined : 'true'} className="relative flex min-h-[100svh] w-full flex-col overflow-hidden bg-[var(--page)]">
       <video
         ref={heroVideoRef}
-        className="hero-video-layer pointer-events-none absolute inset-0 h-full w-full object-cover"
+        className="hero-video-layer hero-video-layer-active pointer-events-none absolute inset-0 h-full w-full object-cover"
         muted
-        loop
         playsInline
         preload="none"
         poster="/images/hero-poster.svg"
+        aria-hidden="true"
+        tabIndex={-1}
+      />
+      <video
+        ref={heroVideoNextRef}
+        className="hero-video-layer hero-video-layer-next pointer-events-none absolute inset-0 h-full w-full object-cover"
+        muted
+        playsInline
+        preload="none"
         aria-hidden="true"
         tabIndex={-1}
       />
