@@ -1,10 +1,83 @@
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useSectionCopy, useSectionCopyReady } from '../lib/siteStorage'
 export default function Hero() {
+  const heroVideoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    const video = heroVideoRef.current
+    if (!video) return
+
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
+    if (motionPreference.matches || connection?.saveData) return
+
+    let disposed = false
+    let sourceAttached = false
+    let idleHandle: number | null = null
+    let fallbackHandle: number | null = null
+    let observer: IntersectionObserver | null = null
+
+    const attachAndPlay = () => {
+      if (disposed || sourceAttached) return
+      sourceAttached = true
+      video.src = '/hero.mp4'
+      video.load()
+      void video.play().catch(() => {
+        // Keep the poster visible if autoplay is unavailable.
+      })
+    }
+
+    const scheduleLoad = () => {
+      const idleWindow = window as Window & {
+        requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
+        cancelIdleCallback?: (handle: number) => void
+      }
+      if (idleWindow.requestIdleCallback) {
+        idleHandle = idleWindow.requestIdleCallback(attachAndPlay, { timeout: 1800 })
+      } else {
+        fallbackHandle = window.setTimeout(attachAndPlay, 650)
+      }
+    }
+
+    if ('IntersectionObserver' in window) {
+      observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          observer?.disconnect()
+          scheduleLoad()
+        }
+      }, { rootMargin: '180px 0px' })
+      observer.observe(video)
+    } else {
+      scheduleLoad()
+    }
+
+    return () => {
+      disposed = true
+      observer?.disconnect()
+      const idleWindow = window as Window & {
+        cancelIdleCallback?: (handle: number) => void
+      }
+      if (idleHandle !== null) idleWindow.cancelIdleCallback?.(idleHandle)
+      if (fallbackHandle !== null) window.clearTimeout(fallbackHandle)
+    }
+  }, [])
+
   const copy = useSectionCopy('homeHero')
   const copyReady = useSectionCopyReady('homeHero')
   return (
     <section id="home" data-preloader-pending={copyReady ? undefined : 'true'} className="relative flex min-h-[100svh] w-full flex-col overflow-hidden bg-[var(--page)]">
+      <video
+        ref={heroVideoRef}
+        className="hero-video-layer pointer-events-none absolute inset-0 h-full w-full object-cover"
+        muted
+        loop
+        playsInline
+        preload="none"
+        poster="/images/hero-poster.svg"
+        aria-hidden="true"
+        tabIndex={-1}
+      />
       <div className="hero-atmosphere absolute inset-0" aria-hidden="true">
         <div className="hero-atmosphere-clouds" />
         <svg className="hero-wing-pair hero-wing-one" viewBox="0 0 100 48" aria-hidden="true">
