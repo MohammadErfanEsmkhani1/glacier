@@ -32,9 +32,11 @@ export default function Hero() {
         standbyVideo.currentTime = 0
         void standbyVideo.play().catch(() => {
           standbyVideo.style.opacity = '0'
+          activeVideo.style.opacity = '1'
           transitionStarted = false
         })
         standbyVideo.style.opacity = '1'
+        activeVideo.style.opacity = '0'
       }
     }
 
