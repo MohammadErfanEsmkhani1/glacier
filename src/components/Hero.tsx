@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'
-import type { CSSProperties } from 'react'
 import { useSectionCopy, useSectionCopyReady } from '../lib/siteStorage'
 export default function Hero() {
   const copy = useSectionCopy('homeHero')
