@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useFavorites } from '../lib/favorites'
 import { supabase } from '../lib/supabase'
 import { getTitleUrl, type CatalogKind, type CatalogTitle } from '../lib/catalog'
+import { getPosterImageUrl } from '../lib/imagekit'
 
 type TitlePageProps = { titleId?: string; titleSlug?: string }
 
@@ -94,7 +95,7 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
         ) : (
           <motion.article initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }} className="mt-10 grid items-start gap-10 md:grid-cols-[minmax(184px,0.55fr)_1.45fr] md:gap-16">
             <div className="mx-auto w-full max-w-[184px]">
-              {title.poster_url ? <img src={title.poster_url} alt={'Poster for ' + title.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-2xl" /> : <div className="catalogue-artwork home-artwork artwork-0 aspect-[2/3] w-full rounded-xl"><span className="rounded-full border border-white/25 bg-black/20 px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-white">{title.kind}</span></div>}
+              {title.poster_url ? <img src={getPosterImageUrl(title.poster_url, 360)} alt={'Poster for ' + title.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-2xl" /> : <div className="catalogue-artwork home-artwork artwork-0 aspect-[2/3] w-full rounded-xl"><span className="rounded-full border border-white/25 bg-black/20 px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-white">{title.kind}</span></div>}
             </div>
             <div className="flex flex-col justify-center py-1 md:min-h-[276px]">
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">{title.kind === 'movie' ? 'Movie' : 'Series'} · Glacier catalogue</p>
