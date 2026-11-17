@@ -5,6 +5,7 @@ import SiteHeader from './components/SiteHeader'
 import ViewportPreloader from './components/ViewportPreloader'
 import { applyPalette, defaultSeo, getPalette, readAllSeo } from './lib/siteStorage'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
+import { installScrollRestoration } from './lib/scrollRestoration'
 import './index.css'
 
 const Navbar = lazy(() => import('./components/Navbar'))
@@ -77,49 +78,7 @@ function App() {
   const [paletteReady, setPaletteReady] = useState(false)
   const [mode, setMode] = useState<Mode>(() => localStorage.getItem('glacier-mode') === 'light' ? 'light' : 'dark')
 
-  useEffect(() => {
-    const key = `glacier-scroll:${window.location.pathname}${window.location.search}${window.location.hash}`
-    const savePosition = () => {
-      try { sessionStorage.setItem(key, String(window.scrollY)) } catch { /* Storage may be unavailable. */ }
-    }
-    const restorePosition = () => {
-      let saved = ''
-      try { saved = sessionStorage.getItem(key) ?? '' } catch { /* Storage may be unavailable. */ }
-      const y = Number(saved)
-      if (!saved || !Number.isFinite(y) || y <= 0) return
-      let restored = false
-      const observer = new MutationObserver(() => {
-        const loader = document.querySelector('.viewport-preloader')
-        if (!loader || loader.classList.contains('is-leaving')) {
-          restored = true
-          requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: y, behavior: 'instant' })))
-          observer.disconnect()
-        }
-      })
-      observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] })
-      if (!document.querySelector('.viewport-preloader')) {
-        restored = true
-        requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: y, behavior: 'instant' })))
-        observer.disconnect()
-      }
-      window.setTimeout(() => {
-        if (!restored) {
-          restored = true
-          requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, y)))
-          observer.disconnect()
-        }
-      }, 1800)
-    }
-    if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual'
-    window.addEventListener('pagehide', savePosition)
-    window.addEventListener('beforeunload', savePosition)
-    restorePosition()
-    return () => {
-      savePosition()
-      window.removeEventListener('pagehide', savePosition)
-      window.removeEventListener('beforeunload', savePosition)
-    }
-  }, [])
+  useEffect(() => installScrollRestoration(), [])
 
   useEffect(() => {
     document.documentElement.dataset.mode = mode
