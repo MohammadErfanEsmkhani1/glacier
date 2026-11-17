@@ -3,8 +3,8 @@ import { supabase } from '../lib/supabase'
 
 export default function AuthConfirmPage() {
   const [handoffId, setHandoffId] = useState('')
-  const [tokenHash, setTokenHash] = useState('')
-  const [message, setMessage] = useState('Your email link is ready. Confirm below when you’re ready.')
+  const [handoffSecret, setHandoffSecret] = useState('')
+  const [message, setMessage] = useState('Checking your confirmation…')
   const [failed, setFailed] = useState(false)
   const [busy, setBusy] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
@@ -12,57 +12,63 @@ export default function AuthConfirmPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const id = params.get('handoff_id') ?? ''
-    const token = params.get('token_hash') ?? ''
-    const type = params.get('type') ?? ''
-    window.history.replaceState({}, document.title, '/auth/confirm')
-    if (type !== 'signup' || !id || !token) {
+    const secret = params.get('handoff_secret') ?? ''
+    if (!id || !secret) {
       setFailed(true)
-      setMessage('This confirmation link is incomplete or expired. Return to Glacier and request a fresh link.')
+      setMessage('This confirmation link is incomplete. Return to Glacier and request a fresh link.')
       return
     }
     setHandoffId(id)
-    setTokenHash(token)
+    setHandoffSecret(secret)
+
+    let active = true
+    const checkSession = async () => {
+      if (!supabase) {
+        setFailed(true)
+        setMessage('Glacier authentication is not configured. Please return to Glacier.')
+        return
+      }
+      const { data, error } = await supabase.auth.getSession()
+      if (!active) return
+      if (error || !data.session) {
+        setFailed(true)
+        setMessage('Your email link could not be verified. It may have expired; return to Glacier and request a fresh one.')
+        return
+      }
+      setMessage('Your email is confirmed. Complete the sign-in handoff to the browser where you created your account.')
+    }
+    void checkSession()
+    return () => { active = false }
   }, [])
 
-  const confirmEmail = async () => {
-    if (!supabase || !handoffId || !tokenHash || busy || confirmed) return
+  const completeHandoff = async () => {
+    if (!supabase || !handoffId || !handoffSecret || busy || confirmed) return
     setBusy(true)
     setFailed(false)
     try {
-      const { error } = await supabase.functions.invoke('email-verification-handoff', {
-        body: { action: 'publish', handoff_id: handoffId, token_hash: tokenHash },
-      })
-      if (error) throw error
-
-      const localId = localStorage.getItem('glacier-auth-handoff-id')
-      const localSecret = localStorage.getItem('glacier-auth-handoff-secret')
-      if (localId === handoffId && localSecret) {
-        const { data, error: pollError } = await supabase.functions.invoke('email-verification-handoff', {
-          body: { action: 'poll', handoff_id: handoffId, secret: localSecret },
-        })
-        if (pollError) throw pollError
-        const { data: verified, error: verifyError } = await supabase.auth.verifyOtp({
-          token_hash: data.token_hash,
-          type: 'signup',
-        })
-        if (verifyError) throw verifyError
-        if (!verified.session) throw new Error('Your email was confirmed, but Glacier could not start your session.')
-        await supabase.functions.invoke('email-verification-handoff', {
-          body: { action: 'ack', handoff_id: handoffId, secret: localSecret },
-        })
-        localStorage.removeItem('glacier-auth-handoff-id')
-        localStorage.removeItem('glacier-auth-handoff-secret')
-        localStorage.removeItem('glacier-auth-pending-email')
-        setConfirmed(true)
-        setMessage('Lovely — your email is confirmed. You’re signed in to Glacier now.')
-        window.setTimeout(() => window.location.replace('/'), 900)
-      } else {
-        setConfirmed(true)
-        setMessage('Your email is confirmed. Head back to the Glacier tab where you created your account — it will sign you in automatically.')
+      const { data, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError) throw sessionError
+      if (!data.session?.access_token || !data.session.refresh_token) {
+        throw new Error('The confirmation session is missing. Please open the confirmation email again.')
       }
+      const { error: publishError } = await supabase.functions.invoke('email-verification-handoff', {
+        body: {
+          action: 'publish',
+          handoff_id: handoffId,
+          secret: handoffSecret,
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        },
+      })
+      if (publishError) throw publishError
+
+      await supabase.auth.signOut({ scope: 'local' })
+      setConfirmed(true)
+      setMessage('Email confirmed. Return to the original Glacier browser — it will finish signing you in automatically.')
+      window.history.replaceState({}, document.title, '/auth/confirm')
     } catch (error) {
       setFailed(true)
-      setMessage(error instanceof Error ? error.message : 'We could not complete this confirmation. Please request a fresh link from Glacier.')
+      setMessage(error instanceof Error ? error.message : 'We could not complete sign-in. Please try again.')
     } finally {
       setBusy(false)
     }
@@ -78,11 +84,11 @@ export default function AuthConfirmPage() {
           </svg>
         </div>
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">A note from Glacier</p>
-        <h1 className="mt-3 font-serif text-3xl text-[var(--text)]">{failed ? 'Let’s try that again.' : 'You’re nearly there.'}</h1>
+        <h1 className="mt-3 font-serif text-3xl text-[var(--text)]">{failed ? 'Let’s try that again.' : confirmed ? 'You’re all set.' : 'You’re nearly there.'}</h1>
         <p role={failed ? 'alert' : 'status'} className="mt-4 text-sm leading-7 text-[var(--muted)]">{message}</p>
         {!failed && !confirmed && (
-          <button type="button" onClick={confirmEmail} disabled={busy || !tokenHash} className="mt-8 inline-flex rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[#101628] disabled:cursor-not-allowed disabled:opacity-60">
-            {busy ? 'Confirming your email…' : 'Confirm my email'}
+          <button type="button" onClick={completeHandoff} disabled={busy || !handoffId || !handoffSecret} className="mt-8 inline-flex rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[#101628] disabled:cursor-not-allowed disabled:opacity-60">
+            {busy ? 'Finishing…' : 'Continue to Glacier'}
           </button>
         )}
         {(failed || confirmed) && <a href="/" className="mt-8 inline-flex rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[#101628]">Back to Glacier</a>}
