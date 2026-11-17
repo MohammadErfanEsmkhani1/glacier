@@ -1,8 +1,8 @@
 const STORAGE_PREFIX = 'glacier-scroll:v2:'
-const RESTORE_FALLBACK_MS = 9000
+const RESTORE_FALLBACK_MS = 12000
 
 function getStorageKey() {
-  return STORAGE_PREFIX + window.location.pathname + window.location.search + window.location.hash
+  return STORAGE_PREFIX + window.location.pathname + window.location.search
 }
 
 function readSavedPosition(key: string) {
