@@ -3,10 +3,16 @@ create table if not exists public.auth_email_handoffs (
   secret_hash text not null,
   token_hash text,
   signup_started_at timestamptz,
+  email_address text,
+  signup_token_hash text,
+  last_email_sent_at timestamptz,
   expires_at timestamptz not null,
   created_at timestamptz not null default now()
 );
 alter table public.auth_email_handoffs add column if not exists signup_started_at timestamptz;
+alter table public.auth_email_handoffs add column if not exists email_address text;
+alter table public.auth_email_handoffs add column if not exists signup_token_hash text;
+alter table public.auth_email_handoffs add column if not exists last_email_sent_at timestamptz;
 
 create index if not exists auth_email_handoffs_expires_at_idx
   on public.auth_email_handoffs (expires_at);
