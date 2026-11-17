@@ -129,28 +129,58 @@ Deno.serve(async (req) => {
         throw new Error("Supabase did not return a signup confirmation token");
       }
 
-      const confirmationUrl = new URL("/auth/confirm", redirectOrigin);
-      confirmationUrl.searchParams.set("handoff_id", id);
-      confirmationUrl.searchParams.set("token_hash", tokenHash);
-      confirmationUrl.searchParams.set("type", "signup");
-      const safeEmail = escapeHtml(email);
-      const html = `<!doctype html><html><body style="margin:0;padding:40px 16px;background:#100d12;color:#f4eff5;font-family:Arial,sans-serif"><div style="max-width:480px;margin:0 auto;padding:36px 30px;border:1px solid #39313d;border-radius:20px;background:#1b1620"><p style="margin:0 0 22px;color:#c5a8e8;font-size:11px;font-weight:700;letter-spacing:3px">GLACIER</p><h1 style="margin:0 0 14px;font-family:Georgia,serif;font-size:30px;font-weight:400">One small step before you settle in.</h1><p style="margin:0 0 24px;color:#c8c0cc;font-size:15px;line-height:1.7">We're glad you're here. Confirm your email address and your Glacier account will be ready.</p><a href="${confirmationUrl.toString()}" style="display:inline-block;padding:14px 24px;border-radius:999px;background:#c5a8e8;color:#17111d;text-decoration:none;font-weight:700">Confirm my email</a><p style="margin:24px 0 0;color:#a99eae;font-size:13px;line-height:1.7">If you didn't ask to create a Glacier account, you can safely ignore this email.</p><p style="margin:18px 0 0;color:#7f7484;font-size:11px">Sent to ${safeEmail}</p></div></body></html>`;
-      const emailResponse = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: fromEmail,
-          to: [email],
-          subject: "Confirm your Glacier account",
-          html,
-        }),
-      });
+      const { error: tokenStoreError } = await admin.from("auth_email_handoffs")
+        .update({ email_address: email, signup_token_hash: tokenHash, last_email_sent_at: new Date().toISOString() })
+        .eq("handoff_id", id)
+        .eq("secret_hash", secretHash);
+      if (tokenStoreError) {
+        if (generated.user?.id) await admin.auth.admin.deleteUser(generated.user.id);
+        await admin.from("auth_email_handoffs").update({ signup_started_at: null }).eq("handoff_id", id).eq("secret_hash", secretHash);
+        throw tokenStoreError;
+      }
+      const emailResponse = await sendConfirmationEmail(resendKey, fromEmail, email, redirectOrigin, id, tokenHash);
       if (!emailResponse.ok) {
         const providerError = await emailResponse.text();
         console.error("Glacier confirmation email delivery failed", providerError);
         if (generated.user?.id) await admin.auth.admin.deleteUser(generated.user.id);
         await admin.from("auth_email_handoffs").update({ signup_started_at: null }).eq("handoff_id", id).eq("secret_hash", secretHash);
         return Response.json({ error: "The confirmation email could not be sent. Your account request was safely rolled back; please try again later." }, { status: 502, headers });
+      }
+      return Response.json({ ok: true }, { headers });
+    }
+
+    if (action === "resend") {
+      if (typeof secret !== "string" || !/^[0-9a-f]{64}$/i.test(secret)) return Response.json({ error: "Invalid registration request" }, { status: 400, headers });
+      const secretHash = await hashSecret(secret);
+      const { data: pending, error: pendingError } = await admin.from("auth_email_handoffs")
+        .select("email_address, signup_token_hash, last_email_sent_at")
+        .eq("handoff_id", id)
+        .eq("secret_hash", secretHash)
+        .gt("expires_at", new Date().toISOString())
+        .maybeSingle();
+      if (pendingError) throw pendingError;
+      if (!pending?.email_address || !pending.signup_token_hash) return Response.json({ error: "This confirmation request has expired. Please start again." }, { status: 410, headers });
+      if (pending.last_email_sent_at && Date.now() - new Date(pending.last_email_sent_at).getTime() < 60_000) {
+        return Response.json({ error: "Please wait a moment before requesting another confirmation email." }, { status: 429, headers });
+      }
+      const resendKey = Deno.env.get("RESEND_API_KEY");
+      const fromEmail = Deno.env.get("RESEND_FROM_EMAIL");
+      if (!resendKey || !fromEmail) return Response.json({ error: "Glacier email delivery is not configured yet." }, { status: 503, headers });
+      const clientIp = (req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown").trim();
+      const ipDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(clientIp));
+      const ipHash = Array.from(new Uint8Array(ipDigest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+      const { data: allowed, error: rateError } = await admin.rpc("consume_auth_email_handoff_rate_limit", { p_ip_hash: ipHash });
+      if (rateError) throw rateError;
+      if (allowed !== true) return Response.json({ error: "Too many email requests. Please wait a few minutes and try again." }, { status: 429, headers });
+      const { error: timestampError } = await admin.from("auth_email_handoffs")
+        .update({ last_email_sent_at: new Date().toISOString() })
+        .eq("handoff_id", id)
+        .eq("secret_hash", secretHash);
+      if (timestampError) throw timestampError;
+      const emailResponse = await sendConfirmationEmail(resendKey, fromEmail, pending.email_address, origin, id, pending.signup_token_hash);
+      if (!emailResponse.ok) {
+        console.error("Glacier confirmation resend failed", await emailResponse.text());
+        return Response.json({ error: "We couldn't resend the confirmation email. Please try again shortly." }, { status: 502, headers });
       }
       return Response.json({ ok: true }, { headers });
     }
