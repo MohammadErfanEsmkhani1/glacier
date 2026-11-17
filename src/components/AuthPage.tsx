@@ -294,6 +294,10 @@ export default function AuthPage({ initialMode }: Props) {
     setVerificationNotice('')
     setVerificationBusy(true)
     try {
+      const { error: renewError } = await supabase.functions.invoke('email-verification-handoff', {
+        body: { action: 'renew', handoff_id: handoffId, secret: handoffSecret },
+      })
+      if (renewError) throw renewError
       const callback = new URL('/auth/confirm', window.location.origin)
       callback.searchParams.set('handoff_id', handoffId)
       const { error: resendError } = await supabase.auth.resend({
