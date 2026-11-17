@@ -125,6 +125,9 @@ export default function AuthPage({ initialMode }: Props) {
 
   const closeVerification = () => {
     setVerificationOpen(false)
+    localStorage.removeItem('glacier-auth-handoff-id')
+    localStorage.removeItem('glacier-auth-handoff-secret')
+    localStorage.removeItem('glacier-auth-pending-email')
     setVerificationError('')
     setHandoffId('')
     setHandoffSecret('')
@@ -264,18 +267,7 @@ export default function AuthPage({ initialMode }: Props) {
         : ''
       const authMessage = caught instanceof Error ? caught.message.toLowerCase() : ''
       if (mode === 'login' && (authCode === 'email_not_confirmed' || authMessage.includes('email not confirmed'))) {
-        try {
-          const { error: resendError } = await supabase.auth.resend({
-            type: 'signup',
-            email: trimmedEmail,
-          })
-          if (resendError) throw resendError
-          openVerification(trimmedEmail)
-        } catch (resendCaught) {
-          setError(resendCaught instanceof Error
-            ? resendCaught.message
-            : 'We could not send a fresh confirmation link. Please try again in a little while.')
-        }
+        setError('This email has not been confirmed yet. Open the confirmation link from the Glacier browser where you started registration, or create a fresh registration request.')
       } else {
         setError(caught instanceof Error ? caught.message : 'Authentication failed. Please try again.')
       }
