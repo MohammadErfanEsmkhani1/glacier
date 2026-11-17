@@ -94,6 +94,7 @@ function waitForVideo(video: HTMLVideoElement) {
       window.clearTimeout(timeout)
       video.removeEventListener('canplay', onCanPlay)
       video.removeEventListener('error', finish)
+      resolve()
     }
 
     const onCanPlay = () => {
