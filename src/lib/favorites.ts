@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { supabase } from './supabase'\nimport { readPersonalIds, writePersonalIds } from './personalCache'
+import { supabase } from './supabase'
+import { readPersonalIds, writePersonalIds } from './personalCache'
 
 type FavoriteChange = { userId: string; titleId: string; saved: boolean }
 const FAVORITES_EVENT = 'glacier:favorites-updated'
@@ -24,7 +25,14 @@ export function useFavorites() {
       return
     }
 
-    setLoading(true)
+    const cached = readPersonalIds('favorites', id)
+    if (cached.length) {
+      setFavoriteIds(cached)
+      setLoading(false)
+    } else {
+      setLoading(true)
+    }
+
     const { data, error: queryError } = await supabase
       .from('user_favorites')
       .select('title_id')
@@ -35,7 +43,9 @@ export function useFavorites() {
       setError(queryError.message)
     } else {
       setError('')
-      const ids = (data ?? []).map((row) => row.title_id)\n      setFavoriteIds(ids)\n      writePersonalIds('favorites', id, ids)
+      const ids = (data ?? []).map((row) => row.title_id)
+      setFavoriteIds(ids)
+      writePersonalIds('favorites', id, ids)
     }
     setLoading(false)
   }, [])
@@ -50,26 +60,27 @@ export function useFavorites() {
     const onFavoriteChange = (event: Event) => {
       const change = (event as CustomEvent<FavoriteChange>).detail
       if (!change || change.userId !== currentUserId.current) return
-      setFavoriteIds((current) => applyFavoriteChange(current, change))
+      setFavoriteIds((current) => {
+        const next = applyFavoriteChange(current, change)
+        writePersonalIds('favorites', change.userId, next)
+        return next
+      })
     }
     window.addEventListener(FAVORITES_EVENT, onFavoriteChange)
 
     const sync = (id: string | null) => {
-      if (!active) return
-      // Token refreshes and browser resume can emit auth events for the same
-      // user. Keep the current favorites visible instead of clearing and
-      // querying Supabase again.
-      if (currentUserId.current === id) return
+      if (!active || currentUserId.current === id) return
       currentUserId.current = id
       pendingTitles.current.clear()
       setUserId(id)
-      setFavoriteIds([])
+      setFavoriteIds(id ? readPersonalIds('favorites', id) : [])
       setError('')
       if (!id) {
         setLoading(false)
         return
       }
-      if (readPersonalIds('favorites', id).length) setLoading(false)\n      void load(id)
+      setLoading(readPersonalIds('favorites', id).length === 0)
+      void load(id)
     }
 
     void supabase.auth.getSession().then(({ data }) => {
@@ -93,11 +104,13 @@ export function useFavorites() {
 
     const shouldSave = !favoriteIds.includes(titleId)
     const change: FavoriteChange = { userId: id, titleId, saved: shouldSave }
-
-    // Update every mounted favorites view immediately, before waiting for Supabase.
     pendingTitles.current.add(titleId)
     setError('')
-    setFavoriteIds((current) => applyFavoriteChange(current, change))
+    setFavoriteIds((current) => {
+      const next = applyFavoriteChange(current, change)
+      writePersonalIds('favorites', id, next)
+      return next
+    })
     window.dispatchEvent(new CustomEvent(FAVORITES_EVENT, { detail: change }))
 
     const result = shouldSave
@@ -106,11 +119,15 @@ export function useFavorites() {
 
     pendingTitles.current.delete(titleId)
     if (currentUserId.current !== id) return false
+    if (result.error && !navigator.onLine) return true
 
     if (result.error) {
-      // Roll back the optimistic change if the database did not accept it.
       const rollback: FavoriteChange = { ...change, saved: !shouldSave }
-      setFavoriteIds((current) => {\n        const next = applyFavoriteChange(current, rollback)\n        writePersonalIds('favorites', id, next)\n        return next\n      })
+      setFavoriteIds((current) => {
+        const next = applyFavoriteChange(current, rollback)
+        writePersonalIds('favorites', id, next)
+        return next
+      })
       window.dispatchEvent(new CustomEvent(FAVORITES_EVENT, { detail: rollback }))
       setError(result.error.message)
       return false
