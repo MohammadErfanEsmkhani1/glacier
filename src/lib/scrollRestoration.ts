@@ -82,6 +82,8 @@ export function installScrollRestoration() {
 
   const cancelForUserInput = () => {
     if (restored) return
+    const loader = document.querySelector('.viewport-preloader')
+    if (loader && !loader.classList.contains('is-leaving')) return
     userInteracted = true
     finishRestoration()
   }
