@@ -7,7 +7,6 @@ export default function AuthConfirmPage() {
 
   useEffect(() => {
     let active = true
-    let timer: number | undefined
     let busy = false
 
     const finishOnThisBrowser = async (handoffId: string, secret: string) => {
@@ -83,7 +82,6 @@ export default function AuthConfirmPage() {
     void run()
     return () => {
       active = false
-      if (timer !== undefined) window.clearInterval(timer)
     }
   }, [])
 
