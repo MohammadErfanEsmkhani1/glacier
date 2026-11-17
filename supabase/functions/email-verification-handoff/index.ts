@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const productionOrigin = "https://glacier-beta-coral.vercel.app";
 const allowedOrigin = (origin: string) => {
   try {
     const host = new URL(origin).hostname;
@@ -10,10 +11,13 @@ const hashSecret = async (secret: string) => {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret));
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 };
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+}[char] ?? char));
 
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin") ?? "";
-  const corsOrigin = allowedOrigin(origin) ? origin : "https://glacier-beta-coral.vercel.app";
+  const corsOrigin = allowedOrigin(origin) ? origin : productionOrigin;
   const headers = {
     "Access-Control-Allow-Origin": corsOrigin,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -26,7 +30,7 @@ Deno.serve(async (req) => {
 
   const url = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !serviceKey) return Response.json({ error: "Handoff service is not configured" }, { status: 500, headers });
+  if (!url || !serviceKey) return Response.json({ error: "Authentication service is not configured" }, { status: 500, headers });
   const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
   try {
@@ -54,6 +58,85 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true }, { headers });
     }
 
+    if (action === "signup") {
+      const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+      const password = typeof body.password === "string" ? body.password : "";
+      const redirectOrigin = typeof body.redirect_origin === "string" && allowedOrigin(body.redirect_origin)
+        ? body.redirect_origin
+        : "";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254 || password.length < 8 || password.length > 128 || !redirectOrigin) {
+        return Response.json({ error: "Please check your email, password, and Glacier address, then try again." }, { status: 400, headers });
+      }
+      if (typeof secret !== "string" || !/^[0-9a-f]{64}$/i.test(secret)) return Response.json({ error: "Invalid registration request" }, { status: 400, headers });
+      const secretHash = await hashSecret(secret);
+      const { data: challenge, error: challengeError } = await admin.from("auth_email_handoffs")
+        .select("handoff_id")
+        .eq("handoff_id", id)
+        .eq("secret_hash", secretHash)
+        .gt("expires_at", new Date().toISOString())
+        .maybeSingle();
+      if (challengeError) throw challengeError;
+      if (!challenge) return Response.json({ error: "Your registration request expired. Please start again." }, { status: 410, headers });
+
+      const resendKey = Deno.env.get("RESEND_API_KEY");
+      const fromEmail = Deno.env.get("RESEND_FROM_EMAIL");
+      if (!resendKey || !fromEmail) return Response.json({ error: "Glacier email delivery is not configured yet." }, { status: 503, headers });
+
+      const captchaSecret = Deno.env.get("TURNSTILE_SECRET_KEY");
+      if (captchaSecret) {
+        const captchaToken = typeof body.captcha_token === "string" ? body.captcha_token : "";
+        if (!captchaToken) return Response.json({ error: "Please complete the security check and try again." }, { status: 400, headers });
+        const form = new FormData();
+        form.set("secret", captchaSecret);
+        form.set("response", captchaToken);
+        const remoteIp = req.headers.get("cf-connecting-ip");
+        if (remoteIp) form.set("remoteip", remoteIp);
+        const verification = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body: form });
+        const captchaResult = await verification.json();
+        if (!verification.ok || captchaResult.success !== true) return Response.json({ error: "The security check expired. Please try again." }, { status: 400, headers });
+      }
+
+      const callback = new URL("/auth/confirm", redirectOrigin);
+      callback.searchParams.set("handoff_id", id);
+      const { data: generated, error: generateError } = await admin.auth.admin.generateLink({
+        type: "signup",
+        email,
+        password,
+        options: { redirectTo: callback.toString() },
+      });
+      if (generateError) {
+        const message = generateError.message.toLowerCase().includes("already")
+          ? "An account request already exists for this email. Try signing in, or contact Glacier support if you never received its confirmation email."
+          : "We couldn't create your account right now. Please check the details and try again.";
+        return Response.json({ error: message }, { status: 400, headers });
+      }
+      const tokenHash = generated.properties?.hashed_token;
+      if (!tokenHash) throw new Error("Supabase did not return a signup confirmation token");
+
+      const confirmationUrl = new URL("/auth/confirm", redirectOrigin);
+      confirmationUrl.searchParams.set("handoff_id", id);
+      confirmationUrl.searchParams.set("token_hash", tokenHash);
+      confirmationUrl.searchParams.set("type", "signup");
+      const safeEmail = escapeHtml(email);
+      const html = `<!doctype html><html><body style="margin:0;padding:40px 16px;background:#100d12;color:#f4eff5;font-family:Arial,sans-serif"><div style="max-width:480px;margin:0 auto;padding:36px 30px;border:1px solid #39313d;border-radius:20px;background:#1b1620"><p style="margin:0 0 22px;color:#c5a8e8;font-size:11px;font-weight:700;letter-spacing:3px">GLACIER</p><h1 style="margin:0 0 14px;font-family:Georgia,serif;font-size:30px;font-weight:400">One small step before you settle in.</h1><p style="margin:0 0 24px;color:#c8c0cc;font-size:15px;line-height:1.7">We're glad you're here. Confirm your email address and your Glacier account will be ready.</p><a href="${confirmationUrl.toString()}" style="display:inline-block;padding:14px 24px;border-radius:999px;background:#c5a8e8;color:#17111d;text-decoration:none;font-weight:700">Confirm my email</a><p style="margin:24px 0 0;color:#a99eae;font-size:13px;line-height:1.7">If you didn't ask to create a Glacier account, you can safely ignore this email.</p><p style="margin:18px 0 0;color:#7f7484;font-size:11px">Sent to ${safeEmail}</p></div></body></html>`;
+      const emailResponse = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: [email],
+          subject: "Confirm your Glacier account",
+          html,
+        }),
+      });
+      if (!emailResponse.ok) {
+        const providerError = await emailResponse.text();
+        console.error("Glacier confirmation email delivery failed", providerError);
+        return Response.json({ error: "Your account request was created, but the confirmation email could not be sent. Please contact Glacier support before trying again." }, { status: 502, headers });
+      }
+      return Response.json({ ok: true }, { headers });
+    }
+
     if (action === "publish") {
       const tokenHash = body?.token_hash;
       if (typeof tokenHash !== "string" || tokenHash.length < 20 || tokenHash.length > 512) return Response.json({ error: "Invalid confirmation link" }, { status: 400, headers });
@@ -66,21 +149,6 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (error) throw error;
       if (!data) return Response.json({ error: "This sign-up link has expired or has already been used. Request a fresh link from Glacier." }, { status: 410, headers });
-      return Response.json({ ok: true }, { headers });
-    }
-
-    if (action === "renew") {
-      if (typeof secret !== "string" || !/^[0-9a-f]{64}$/i.test(secret)) return Response.json({ error: "Invalid challenge secret" }, { status: 400, headers });
-      const secretHash = await hashSecret(secret);
-      const { data, error } = await admin.from("auth_email_handoffs")
-        .update({ token_hash: null, expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString() })
-        .eq("handoff_id", id)
-        .eq("secret_hash", secretHash)
-        .gt("expires_at", new Date().toISOString())
-        .select("handoff_id")
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) return Response.json({ error: "This sign-up request has expired. Please start again." }, { status: 410, headers });
       return Response.json({ ok: true }, { headers });
     }
 
