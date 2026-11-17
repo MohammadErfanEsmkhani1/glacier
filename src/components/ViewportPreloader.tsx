@@ -80,21 +80,29 @@ function waitForImage(image: HTMLImageElement) {
 }
 
 function waitForVideo(video: HTMLVideoElement) {
-  if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) return Promise.resolve()
+  // HAVE_CURRENT_DATA only guarantees a frame. Wait for HAVE_FUTURE_DATA so
+  // playback can begin with data buffered beyond the current frame.
+  if (video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) return Promise.resolve()
 
   return new Promise<void>((resolve) => {
+    let finished = false
     const timeout = window.setTimeout(finish, RESOURCE_TIMEOUT_MS)
 
     function finish() {
+      if (finished) return
+      finished = true
       window.clearTimeout(timeout)
-      video.removeEventListener('loadeddata', finish)
+      video.removeEventListener('canplay', finish)
       video.removeEventListener('error', finish)
-      resolve()
     }
 
-    video.addEventListener('loadeddata', finish, { once: true })
+    const onCanPlay = () => {
+      if (video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) finish()
+    }
+
+    video.addEventListener('canplay', onCanPlay)
     video.addEventListener('error', finish, { once: true })
-    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) finish()
+    if (video.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) finish()
   })
 }
 
