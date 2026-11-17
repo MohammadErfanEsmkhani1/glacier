@@ -52,7 +52,7 @@ export default function AuthPage({ initialMode }: Props) {
   const captchaWidgetId = useRef<string | null>(null)
 
   useEffect(() => {
-    if (mode !== 'register' || !TURNSTILE_SITE_KEY) return
+    if (!TURNSTILE_SITE_KEY) return
 
     let active = true
     const scriptId = 'glacier-cloudflare-turnstile'
@@ -154,7 +154,7 @@ export default function AuthPage({ initialMode }: Props) {
       return
     }
 
-    if (mode === 'register' && TURNSTILE_SITE_KEY && !captchaToken) {
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
       setError(captchaStatus === 'error'
         ? 'The security check could not load. Please refresh the page and try again.'
         : 'Please complete the quick security check before creating your account.')
@@ -189,6 +189,7 @@ export default function AuthPage({ initialMode }: Props) {
         const { error: authError } = await supabase.auth.signInWithPassword({
           email: trimmedEmail,
           password,
+          options: TURNSTILE_SITE_KEY ? { captchaToken } : undefined,
         })
         if (authError) throw authError
         window.location.assign(safeReturnPath())
@@ -197,7 +198,8 @@ export default function AuthPage({ initialMode }: Props) {
       const authCode = caught && typeof caught === 'object' && 'code' in caught
         ? String((caught as { code?: unknown }).code ?? '')
         : ''
-      if (mode === 'login' && authCode === 'email_not_confirmed') {
+      const authMessage = caught instanceof Error ? caught.message.toLowerCase() : ''
+      if (mode === 'login' && (authCode === 'email_not_confirmed' || authMessage.includes('email not confirmed'))) {
         try {
           const { error: resendError } = await supabase.auth.resend({
             type: 'signup',
@@ -215,7 +217,7 @@ export default function AuthPage({ initialMode }: Props) {
       }
     } finally {
       setBusy(false)
-      if (mode === 'register' && TURNSTILE_SITE_KEY && captchaWidgetId.current && window.turnstile) {
+      if (TURNSTILE_SITE_KEY && captchaWidgetId.current && window.turnstile) {
         window.turnstile.reset(captchaWidgetId.current)
         setCaptchaToken('')
       }
@@ -350,7 +352,7 @@ export default function AuthPage({ initialMode }: Props) {
             {fieldErrors.password && <p id="auth-password-error" className="mt-2 text-xs text-red-400" role="alert">{fieldErrors.password}</p>}
           </div>
 
-          {mode === 'register' && TURNSTILE_SITE_KEY && (
+          {TURNSTILE_SITE_KEY && (
             <div className="space-y-2">
               <div ref={captchaContainer} className="min-h-[65px]" />
               {captchaStatus === 'loading' && <p className="text-xs text-[var(--muted)]">Loading a quick security check…</p>}
