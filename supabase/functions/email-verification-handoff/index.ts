@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const allowedOrigin = (origin: string) => {
   try {
     const host = new URL(origin).hostname;
-    return host === "glacier-beta-coral.vercel.app" || host.endsWith(".vercel.app") || host === "localhost" || host === "127.0.0.1";
+    return host === "glacier-beta-coral.vercel.app" || (host.startsWith("glacier-") && host.endsWith(".vercel.app")) || host === "localhost" || host === "127.0.0.1";
   } catch { return false; }
 };
 const hashSecret = async (secret: string) => {
