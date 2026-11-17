@@ -13,11 +13,14 @@ export function getPosterImageUrl(source: string | null | undefined, width = 360
     if (url.origin !== IMAGEKIT_ORIGIN || !url.pathname.startsWith(IMAGEKIT_ACCOUNT_PATH + '/')) return source
 
     const segments = url.pathname.split('/')
-    if (segments[2]?.startsWith('tr:')) return source
-
     const safeWidth = Math.max(160, Math.min(1200, Math.round(width)))
     const height = Math.round(safeWidth * 1.5)
-    segments.splice(2, 0, `tr:w-${safeWidth},h-${height},q-82,f-auto`)
+    const transformation = `tr:w-${safeWidth},h-${height},q-82,f-auto`
+
+    // Replace an existing ImageKit transform instead of returning the same
+    // URL for every candidate; this keeps srcSet responsive without stacking transforms.
+    if (segments[2]?.startsWith('tr:')) segments[2] = transformation
+    else segments.splice(2, 0, transformation)
     url.pathname = segments.join('/')
     return url.toString()
   } catch {
@@ -27,8 +30,7 @@ export function getPosterImageUrl(source: string | null | undefined, width = 360
 
 /**
  * Build responsive candidates for browsers that support srcSet.
- * Returns undefined for external URLs or URLs that already contain
- * an ImageKit transformation, leaving the existing src as the fallback.
+ * Returns undefined for external URLs that cannot be transformed by this account.
  */
 export function getPosterImageSrcSet(source: string | null | undefined): string | undefined {
   if (!source) return undefined
