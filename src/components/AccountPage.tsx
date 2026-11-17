@@ -3,7 +3,8 @@ import { motion } from 'framer-motion'
 import { getTitleUrl, useCatalog, useCatalogReady } from '../lib/catalog'
 import { useFavorites } from '../lib/favorites'
 import { supabase } from '../lib/supabase'
-import { getPosterImageSrcSet, getPosterImageUrl } from '../lib/imagekit'\nimport { readPersonalIds, writePersonalIds } from '../lib/personalCache'
+import { getPosterImageSrcSet, getPosterImageUrl } from '../lib/imagekit'
+import { readPersonalIds, writePersonalIds } from '../lib/personalCache'
 
 export default function AccountPage() {
   const catalog = useCatalog()
