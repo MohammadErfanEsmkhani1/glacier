@@ -15,7 +15,7 @@ export default function AuthConfirmPage() {
     const token = params.get('token_hash') ?? ''
     const type = params.get('type') ?? ''
     window.history.replaceState({}, document.title, '/auth/confirm')
-    if (type !== 'email' || !id || !token) {
+    if (type !== 'signup' || !id || !token) {
       setFailed(true)
       setMessage('This confirmation link is incomplete or expired. Return to Glacier and request a fresh link.')
       return
@@ -43,7 +43,7 @@ export default function AuthConfirmPage() {
         if (pollError) throw pollError
         const { data: verified, error: verifyError } = await supabase.auth.verifyOtp({
           token_hash: data.token_hash,
-          type: 'email',
+          type: 'signup',
         })
         if (verifyError) throw verifyError
         if (!verified.session) throw new Error('Your email was confirmed, but Glacier could not start your session.')
