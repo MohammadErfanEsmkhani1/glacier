@@ -5,6 +5,12 @@ import { readPersonalIds, writePersonalIds } from './personalCache'
 type FavoriteChange = { userId: string; titleId: string; saved: boolean }
 const FAVORITES_EVENT = 'glacier:favorites-updated'
 
+function fetchFavorites(id: string) {
+  return supabase!.from('user_favorites').select('title_id').eq('user_id', id)
+}
+
+let favoritesRequest: { userId: string; promise: ReturnType<typeof fetchFavorites> } | null = null
+
 function applyFavoriteChange(current: string[], change: FavoriteChange) {
   if (change.saved) return current.includes(change.titleId) ? current : [...current, change.titleId]
   return current.filter((id) => id !== change.titleId)
@@ -33,10 +39,12 @@ export function useFavorites() {
       setLoading(true)
     }
 
-    const { data, error: queryError } = await supabase
-      .from('user_favorites')
-      .select('title_id')
-      .eq('user_id', id)
+    if (!favoritesRequest || favoritesRequest.userId !== id) {
+      favoritesRequest = { userId: id, promise: fetchFavorites(id) }
+    }
+    const request = favoritesRequest
+    const { data, error: queryError } = await request.promise
+    if (favoritesRequest?.promise === request.promise) favoritesRequest = null
 
     if (currentUserId.current !== id) return
     if (queryError) {
