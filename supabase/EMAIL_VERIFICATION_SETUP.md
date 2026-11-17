@@ -31,7 +31,7 @@ In the GitHub repository, open **Settings → Secrets and variables → Actions 
 - `RESEND_FROM_EMAIL`: the verified sender, e.g. `Glacier <accounts@your-verified-domain.com>`.
 - `TURNSTILE_SECRET_KEY` (optional): set this if the public Turnstile site key is enabled in Vercel.
 
-The repository workflow `.github/workflows/deploy-email-verification-handoff.yml` deploys the Edge Function and sets the Resend secrets automatically when this feature branch is updated. This avoids installing the Supabase CLI or running commands on your computer.
+After adding the secrets, open the repository's **Actions** tab, select **Deploy Glacier email verification**, and choose **Run workflow** once. The workflow `.github/workflows/deploy-email-verification-handoff.yml` deploys the Edge Function and sets the Resend secrets automatically. Future changes to the function on this feature branch deploy automatically. No local Supabase CLI or terminal is needed.
 
 ### 4. Enable email confirmation
 
