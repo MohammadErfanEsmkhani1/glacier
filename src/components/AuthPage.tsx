@@ -155,13 +155,14 @@ export default function AuthPage({ initialMode }: Props) {
           body: { action: 'poll', handoff_id: handoffId, secret: handoffSecret },
         })
         if (pollError) throw pollError
-        if (typeof data?.token_hash !== 'string' || !data.token_hash || handoffBusy.current) return
+        if (typeof data?.access_token !== 'string' || typeof data?.refresh_token !== 'string' || handoffBusy.current) return
         handoffBusy.current = true
         setVerificationBusy(true)
-        const { data: verified, error: verifyError } = await supabase!.auth.verifyOtp({ token_hash: data.token_hash, type: 'email' })
+        const { data: verified, error: verifyError } = await supabase!.auth.setSession({ access_token: data.access_token, refresh_token: data.refresh_token })
         if (verifyError) throw verifyError
         if (!verified.session) throw new Error('Your email is confirmed, but Glacier could not start your session. Please sign in.')
-        await supabase!.functions.invoke('email-verification-handoff', { body: { action: 'ack', handoff_id: handoffId, secret: handoffSecret } })
+        const { error: ackError } = await supabase!.functions.invoke('email-verification-handoff', { body: { action: 'ack', handoff_id: handoffId, secret: handoffSecret } })
+        if (ackError) throw ackError
         localStorage.removeItem('glacier-auth-handoff-id')
         localStorage.removeItem('glacier-auth-handoff-secret')
         localStorage.removeItem('glacier-auth-pending-email')
@@ -222,18 +223,28 @@ export default function AuthPage({ initialMode }: Props) {
         localStorage.setItem('glacier-auth-handoff-id', challengeId)
         localStorage.setItem('glacier-auth-handoff-secret', challengeSecret)
         localStorage.setItem('glacier-auth-pending-email', trimmedEmail)
-        const { error: signupError } = await supabase.functions.invoke('email-verification-handoff', {
-          body: {
-            action: 'signup',
-            handoff_id: challengeId,
-            secret: challengeSecret,
-            email: trimmedEmail,
-            password,
-            redirect_origin: window.location.origin,
-            ...(TURNSTILE_SITE_KEY ? { captcha_token: captchaToken } : {}),
+        const callback = new URL('/auth/confirm', window.location.origin)
+        callback.searchParams.set('handoff_id', challengeId)
+        callback.searchParams.set('handoff_secret', challengeSecret)
+        const { data: signupData, error: signupError } = await supabase.auth.signUp({
+          email: trimmedEmail,
+          password,
+          options: {
+            emailRedirectTo: callback.toString(),
+            ...(TURNSTILE_SITE_KEY ? { captchaToken } : {}),
           },
         })
         if (signupError) throw signupError
+        if (signupData.session) {
+          await supabase.functions.invoke('email-verification-handoff', {
+            body: { action: 'ack', handoff_id: challengeId, secret: challengeSecret },
+          })
+          localStorage.removeItem('glacier-auth-handoff-id')
+          localStorage.removeItem('glacier-auth-handoff-secret')
+          localStorage.removeItem('glacier-auth-pending-email')
+          window.location.assign(safeReturnPath())
+          return
+        }
 
         setHandoffId(challengeId)
         setHandoffSecret(challengeSecret)
@@ -277,8 +288,16 @@ export default function AuthPage({ initialMode }: Props) {
     setVerificationNotice('')
     setVerificationBusy(true)
     try {
-      const { error: resendError } = await supabase.functions.invoke('email-verification-handoff', {
-        body: { action: 'resend', handoff_id: handoffId, secret: handoffSecret },
+      const callback = new URL('/auth/confirm', window.location.origin)
+      callback.searchParams.set('handoff_id', handoffId)
+      callback.searchParams.set('handoff_secret', handoffSecret)
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email: pendingEmail,
+        options: {
+          emailRedirectTo: callback.toString(),
+          ...(TURNSTILE_SITE_KEY ? { captchaToken } : {}),
+        },
       })
       if (resendError) throw resendError
       setVerificationNotice('A fresh confirmation email is on its way. Check your inbox in a moment.')
