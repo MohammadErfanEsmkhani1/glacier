@@ -96,6 +96,17 @@ Deno.serve(async (req) => {
         if (!verification.ok || captchaResult.success !== true) return Response.json({ error: "The security check expired. Please try again." }, { status: 400, headers });
       }
 
+      const { data: claimed, error: claimError } = await admin.from("auth_email_handoffs")
+        .update({ signup_started_at: new Date().toISOString() })
+        .eq("handoff_id", id)
+        .eq("secret_hash", secretHash)
+        .gt("expires_at", new Date().toISOString())
+        .is("signup_started_at", null)
+        .select("handoff_id")
+        .maybeSingle();
+      if (claimError) throw claimError;
+      if (!claimed) return Response.json({ error: "This registration request has already been used. Start a fresh registration if you haven't received an email." }, { status: 409, headers });
+
       const callback = new URL("/auth/confirm", redirectOrigin);
       callback.searchParams.set("handoff_id", id);
       const { data: generated, error: generateError } = await admin.auth.admin.generateLink({
@@ -105,13 +116,18 @@ Deno.serve(async (req) => {
         options: { redirectTo: callback.toString() },
       });
       if (generateError) {
+        await admin.from("auth_email_handoffs").update({ signup_started_at: null }).eq("handoff_id", id).eq("secret_hash", secretHash);
         const message = generateError.message.toLowerCase().includes("already")
           ? "An account request already exists for this email. Try signing in, or contact Glacier support if you never received its confirmation email."
           : "We couldn't create your account right now. Please check the details and try again.";
         return Response.json({ error: message }, { status: 400, headers });
       }
       const tokenHash = generated.properties?.hashed_token;
-      if (!tokenHash) throw new Error("Supabase did not return a signup confirmation token");
+      if (!tokenHash) {
+        if (generated.user?.id) await admin.auth.admin.deleteUser(generated.user.id);
+        await admin.from("auth_email_handoffs").update({ signup_started_at: null }).eq("handoff_id", id).eq("secret_hash", secretHash);
+        throw new Error("Supabase did not return a signup confirmation token");
+      }
 
       const confirmationUrl = new URL("/auth/confirm", redirectOrigin);
       confirmationUrl.searchParams.set("handoff_id", id);
@@ -132,7 +148,9 @@ Deno.serve(async (req) => {
       if (!emailResponse.ok) {
         const providerError = await emailResponse.text();
         console.error("Glacier confirmation email delivery failed", providerError);
-        return Response.json({ error: "Your account request was created, but the confirmation email could not be sent. Please contact Glacier support before trying again." }, { status: 502, headers });
+        if (generated.user?.id) await admin.auth.admin.deleteUser(generated.user.id);
+        await admin.from("auth_email_handoffs").update({ signup_started_at: null }).eq("handoff_id", id).eq("secret_hash", secretHash);
+        return Response.json({ error: "The confirmation email could not be sent. Your account request was safely rolled back; please try again later." }, { status: 502, headers });
       }
       return Response.json({ ok: true }, { headers });
     }
