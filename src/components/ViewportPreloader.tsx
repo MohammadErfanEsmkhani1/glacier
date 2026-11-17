@@ -92,7 +92,7 @@ function waitForVideo(video: HTMLVideoElement) {
       if (finished) return
       finished = true
       window.clearTimeout(timeout)
-      video.removeEventListener('canplay', finish)
+      video.removeEventListener('canplay', onCanPlay)
       video.removeEventListener('error', finish)
     }
 
