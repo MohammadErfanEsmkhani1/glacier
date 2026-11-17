@@ -34,7 +34,7 @@ Save the template. Supabase's `{{ .Token }}` variable is the six-digit OTP used 
 
 ## 3. Turn on bot protection (recommended)
 
-Glacier includes optional Cloudflare Turnstile support on the registration screen. To activate it:
+Glacier includes optional Cloudflare Turnstile support on both the registration and sign-in screens, so enabling Supabase's Auth CAPTCHA does not block legitimate password sign-ins. To activate it:
 
 1. Create a Turnstile widget for your Glacier website in Cloudflare. Include the production domain and any preview domains you intend to test.
 2. In Supabase, open **Authentication → Settings → Bot and Abuse Protection**, enable CAPTCHA, select **Cloudflare Turnstile**, and paste the Turnstile **Secret key**.
