@@ -188,8 +188,14 @@ export function installScrollRestoration() {
 
     // If content genuinely became shorter, restore to the furthest reachable
     // position rather than leaving the user at the top.
-    fallbackTimer = window.setTimeout(() => {
+    const finishAtReachablePosition = () => {
       if (restored || userInteracted || savedPosition === null) return
+      const loader = document.querySelector('.viewport-preloader')
+      if (loader && !loader.classList.contains('is-leaving')) {
+        fallbackTimer = window.setTimeout(finishAtReachablePosition, 250)
+        return
+      }
+
       const reachablePosition = Math.min(
         savedPosition,
         Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
@@ -201,7 +207,8 @@ export function installScrollRestoration() {
         document.documentElement.style.scrollBehavior = originalScrollBehavior
         finishRestoration()
       })
-    }, RESTORE_FALLBACK_MS + 500)
+    }
+    fallbackTimer = window.setTimeout(finishAtReachablePosition, RESTORE_FALLBACK_MS + 500)
   }
 
   // A newly opened page has no previous scroll state to restore, so start
