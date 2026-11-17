@@ -24,11 +24,11 @@ export default function Exhibit() {
             ))}
           </div>
         </div>
-        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-6 lg:grid-cols-6">
+        <div className="mt-8 grid grid-cols-3 gap-4 sm:grid-cols-4 md:gap-6 lg:grid-cols-6">
           {visible.map((item, index) => (
             <motion.article key={item.id} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.45, delay: index * 0.045 }} className="group min-w-0">
               <a href={getTitleUrl(item)} className="group block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]">
-                {item.poster_url ? <img src={getPosterImageUrl(item.poster_url, 360)} srcSet={getPosterImageSrcSet(item.poster_url)} sizes="(min-width: 1024px) 176px, (min-width: 768px) calc((100vw - 5rem) / 3), (min-width: 640px) calc((100vw - 4rem) / 3), calc((100vw - 3rem) / 2)" alt={'Poster for ' + item.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-lg transition group-hover:-translate-y-1" loading="lazy" /> : <div className={'catalogue-artwork home-artwork artwork-' + (index % 4)}><span className="rounded-full border border-white/25 bg-black/20 px-2 py-1 text-[8px] uppercase tracking-[0.16em] text-white">{item.kind}</span></div>}
+                {item.poster_url ? <img src={getPosterImageUrl(item.poster_url, 360)} srcSet={getPosterImageSrcSet(item.poster_url)} sizes="(min-width: 1024px) 176px, (min-width: 768px) calc((100vw - 9.5rem) / 4), (min-width: 640px) calc((100vw - 7rem) / 4), calc((100vw - 5rem) / 3)" alt={'Poster for ' + item.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-lg transition group-hover:-translate-y-1" loading="lazy" /> : <div className={'catalogue-artwork home-artwork artwork-' + (index % 4)}><span className="rounded-full border border-white/25 bg-black/20 px-2 py-1 text-[8px] uppercase tracking-[0.16em] text-white">{item.kind}</span></div>}
                 <h3 className="mt-3 font-serif text-xl leading-tight text-[var(--text)] group-hover:text-[var(--accent)]">{item.title}</h3>
               </a>
               <p className="mt-1 text-[10px] text-[var(--muted)]">{item.year} · {item.genre}</p>
