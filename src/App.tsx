@@ -96,10 +96,10 @@ function App() {
           observer.disconnect()
         }
       })
-      observer.observe(document.documentElement, { childList: true, subtree: true })
+      observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] })
       if (!document.querySelector('.viewport-preloader')) {
         restored = true
-        requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, y)))
+        requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: y, behavior: 'instant' })))
         observer.disconnect()
       }
       window.setTimeout(() => {
