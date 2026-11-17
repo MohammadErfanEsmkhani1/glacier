@@ -12,6 +12,7 @@ const Navbar = lazy(() => import('./components/Navbar'))
 const HomePage = lazy(() => import('./components/HomePage'))
 const CategoryPage = lazy(() => import('./components/CategoryPage'))
 const AuthPage = lazy(() => import('./components/AuthPage'))
+const AuthConfirmPage = lazy(() => import('./components/AuthConfirmPage'))
 const AccountPage = lazy(() => import('./components/AccountPage'))
 const AdminPage = lazy(() => import('./components/AdminPage'))
 const TitlePage = lazy(() => import('./components/TitlePage'))
@@ -21,7 +22,7 @@ function RouteLoadingFallback() {
 }
 
 type Mode = 'dark' | 'light'
-const specialPaths = ['/categories', '/login', '/register', '/admin', '/account']
+const specialPaths = ['/categories', '/login', '/register', '/admin', '/account', '/auth/confirm']
 
 function AdminRoute() {
   const [status, setStatus] = useState<'checking' | 'allowed' | 'denied' | 'unconfigured'>('checking')
@@ -145,6 +146,7 @@ function App() {
       {path !== '/' && <SiteHeader mode={mode} onToggleMode={onToggleMode} />}
       {path === '/categories' && <Suspense fallback={<RouteLoadingFallback />}><CategoryPage /></Suspense>}
       {(path === '/login' || path === '/register') && <Suspense fallback={<RouteLoadingFallback />}><AuthPage key={path} initialMode={path === '/register' ? 'register' : 'login'} /></Suspense>}
+      {path === '/auth/confirm' && <Suspense fallback={<RouteLoadingFallback />}><AuthConfirmPage /></Suspense>}
       {path === '/account' && <Suspense fallback={<RouteLoadingFallback />}><AccountPage /></Suspense>}
       {path === '/admin' && <Suspense fallback={<RouteLoadingFallback />}><AdminRoute /></Suspense>}
       {isTitlePage && (titleId || titleSlug) && <Suspense fallback={<RouteLoadingFallback />}><TitlePage titleId={titleId ?? undefined} titleSlug={titleSlug} /></Suspense>}
