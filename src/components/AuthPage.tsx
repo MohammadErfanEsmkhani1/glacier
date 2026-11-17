@@ -217,7 +217,7 @@ export default function AuthPage({ initialMode }: Props) {
         const challengeId = crypto.randomUUID()
         const challengeSecret = Array.from(crypto.getRandomValues(new Uint8Array(32)), (byte) => byte.toString(16).padStart(2, '0')).join('')
         const { error: challengeError } = await supabase.functions.invoke('email-verification-handoff', {
-          body: { action: 'create', handoff_id: challengeId, secret: challengeSecret },
+          body: { action: 'create', handoff_id: challengeId, secret: challengeSecret, email: trimmedEmail },
         })
         if (challengeError) throw challengeError
         localStorage.setItem('glacier-auth-handoff-id', challengeId)
