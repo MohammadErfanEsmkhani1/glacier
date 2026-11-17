@@ -15,6 +15,27 @@ const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
 }[char] ?? char));
 
+const sendConfirmationEmail = async (
+  resendKey: string,
+  fromEmail: string,
+  email: string,
+  origin: string,
+  id: string,
+  tokenHash: string,
+) => {
+  const confirmationUrl = new URL("/auth/confirm", origin);
+  confirmationUrl.searchParams.set("handoff_id", id);
+  confirmationUrl.searchParams.set("token_hash", tokenHash);
+  confirmationUrl.searchParams.set("type", "signup");
+  const safeEmail = escapeHtml(email);
+  const html = `<!doctype html><html><body style="margin:0;padding:40px 16px;background:#100d12;color:#f4eff5;font-family:Arial,sans-serif"><div style="max-width:480px;margin:0 auto;padding:36px 30px;border:1px solid #39313d;border-radius:20px;background:#1b1620"><p style="margin:0 0 22px;color:#c5a8e8;font-size:11px;font-weight:700;letter-spacing:3px">GLACIER</p><h1 style="margin:0 0 14px;font-family:Georgia,serif;font-size:30px;font-weight:400">One small step before you settle in.</h1><p style="margin:0 0 24px;color:#c8c0cc;font-size:15px;line-height:1.7">We're glad you're here. Confirm your email address and your Glacier account will be ready.</p><a href="${confirmationUrl.toString()}" style="display:inline-block;padding:14px 24px;border-radius:999px;background:#c5a8e8;color:#17111d;text-decoration:none;font-weight:700">Confirm my email</a><p style="margin:24px 0 0;color:#a99eae;font-size:13px;line-height:1.7">If you didn't ask to create a Glacier account, you can safely ignore this email.</p><p style="margin:18px 0 0;color:#7f7484;font-size:11px">Sent to ${safeEmail}</p></div></body></html>`;
+  return await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: fromEmail, to: [email], subject: "Confirm your Glacier account", html }),
+  });
+};
+
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin") ?? "";
   const corsOrigin = allowedOrigin(origin) ? origin : productionOrigin;
