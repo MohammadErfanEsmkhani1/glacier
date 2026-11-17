@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { getTitleUrl, useCatalog, useCatalogReady } from '../lib/catalog'
 import { useFavorites } from '../lib/favorites'
 import { supabase } from '../lib/supabase'
-import { getPosterImageSrcSet, getPosterImageUrl } from '../lib/imagekit'
+import { getPosterImageSrcSet, getPosterImageUrl } from '../lib/imagekit'\nimport { readPersonalIds, writePersonalIds } from '../lib/personalCache'
 
 export default function AccountPage() {
   const catalog = useCatalog()
@@ -109,7 +109,7 @@ export default function AccountPage() {
   }
 
   return (
-    <main data-preloader-pending={!catalogReady || favoritesLoading || recentLoading ? 'true' : undefined} className="account-page min-h-screen px-5 pb-24 pt-36 sm:px-8">
+    <main data-preloader-pending={!catalogReady ? 'true' : undefined} className="account-page min-h-screen px-5 pb-24 pt-36 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <motion.header initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">Your own little corner of Glacier</p>
