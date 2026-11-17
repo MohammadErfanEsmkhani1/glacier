@@ -3,68 +3,52 @@ import { motion } from 'framer-motion'
 import SectionHeading from './SectionHeading'
 import { getTitleUrl, useCatalog } from '../lib/catalog'
 import { useFavorites } from '../lib/favorites'
-import { supabase } from '../lib/supabase'\nimport { readPersonalIds, writePersonalIds } from '../lib/personalCache'
+import { supabase } from '../lib/supabase'
+import { readPersonalIds, writePersonalIds } from '../lib/personalCache'
 
 export default function Visit() {
   const catalog = useCatalog()
-  const { userId } = useFavorites()
-  const [favoriteIds, setFavoriteIds] = useState<string[]>([])
+  const { userId, favoriteIds } = useFavorites()
   const [recentIds, setRecentIds] = useState<string[]>([])
   const [historyLoading, setHistoryLoading] = useState(false)
 
   useEffect(() => {
     if (!supabase || !userId) {
-      setFavoriteIds([])
       setRecentIds([])
       setHistoryLoading(false)
       return
     }
     const client = supabase
     let active = true
-    setHistoryLoading(true)
-    const loadPersonalTitles = async () => {
-      const [favorites, recent] = await Promise.all([
-        client.from('user_favorites').select('title_id').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
-        client.from('user_recently_watched').select('title_id').eq('user_id', userId).order('watched_at', { ascending: false }).limit(5),
-      ])
-      if (!active) return
-      setFavoriteIds((favorites.data ?? []).map((row) => row.title_id))
-      setRecentIds((recent.data ?? []).map((row) => row.title_id))
+    const cached = readPersonalIds('recent', userId).slice(0, 5)
+    setRecentIds(cached)
+    setHistoryLoading(cached.length === 0)
+
+    const refreshRecent = async () => {
+      const { data, error } = await client.from('user_recently_watched')
+        .select('title_id').eq('user_id', userId)
+        .order('watched_at', { ascending: false }).limit(5)
+      if (!active || error) return
+      const ids = (data ?? []).map((row) => row.title_id)
+      setRecentIds(ids)
+      writePersonalIds('recent', userId, ids)
       setHistoryLoading(false)
     }
-    void loadPersonalTitles()
-    const refreshPersonalTitles = () => {
-      void Promise.all([
-        client.from('user_favorites').select('title_id').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
-        client.from('user_recently_watched').select('title_id').eq('user_id', userId).order('watched_at', { ascending: false }).limit(5),
-      ]).then(([favorites, recent]) => {
-        if (!active) return
-        setFavoriteIds((favorites.data ?? []).map((row) => row.title_id))
-        setRecentIds((recent.data ?? []).map((row) => row.title_id))
-      })
-    }
-    const refreshOnReturn = () => refreshPersonalTitles()
+
+    void refreshRecent()
+    const refreshOnReturn = () => { if (document.visibilityState === 'visible') void refreshRecent() }
     window.addEventListener('pageshow', refreshOnReturn)
     window.addEventListener('focus', refreshOnReturn)
     window.addEventListener('popstate', refreshOnReturn)
     document.addEventListener('visibilitychange', refreshOnReturn)
-    const onFavoriteChange = (event: Event) => {
-      const change = (event as CustomEvent<{ userId: string; titleId: string; saved: boolean }>).detail
-      if (!change || change.userId !== userId) return
-      setFavoriteIds((current) => change.saved
-        ? [change.titleId, ...current.filter((id) => id !== change.titleId)].slice(0, 5)
-        : current.filter((id) => id !== change.titleId))
-    }
-    window.addEventListener('glacier:favorites-updated', onFavoriteChange)
-    window.addEventListener('glacier:recently-watched-updated', refreshPersonalTitles)
+    window.addEventListener('glacier:recently-watched-updated', refreshRecent)
     return () => {
       active = false
-      window.removeEventListener('glacier:favorites-updated', onFavoriteChange)
-      window.removeEventListener('glacier:recently-watched-updated', refreshPersonalTitles)
       window.removeEventListener('pageshow', refreshOnReturn)
       window.removeEventListener('focus', refreshOnReturn)
       window.removeEventListener('popstate', refreshOnReturn)
       document.removeEventListener('visibilitychange', refreshOnReturn)
+      window.removeEventListener('glacier:recently-watched-updated', refreshRecent)
     }
   }, [userId])
 
