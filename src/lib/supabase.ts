@@ -11,6 +11,22 @@ export const supabase = isSupabaseConfigured
         flowType: 'implicit',
         autoRefreshToken: true,
         persistSession: true,
+        detectSessionInUrl: false,
+      },
+    })
+  : null
+
+/**
+ * Isolated client for the email-confirmation callback.
+ * It may read the session from the confirmation URL, but never persists it
+ * into the browser that opened the email link.
+ */
+export const confirmationSupabase = isSupabaseConfigured
+  ? createClient(supabaseUrl, supabasePublishableKey, {
+      auth: {
+        flowType: 'implicit',
+        autoRefreshToken: false,
+        persistSession: false,
         detectSessionInUrl: true,
       },
     })
