@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
 
     if (action === "create") {
       const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > 254) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
         return Response.json({ error: "Invalid signup email" }, { status: 400, headers });
       }
       const clientIp = (req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown").trim();
