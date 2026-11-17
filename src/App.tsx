@@ -89,7 +89,8 @@ function App() {
       if (!saved || !Number.isFinite(y) || y <= 0) return
       let restored = false
       const observer = new MutationObserver(() => {
-        const loader = document.querySelector('.viewport-preloader')\n        if (!loader || loader.classList.contains('is-leaving')) {
+        const loader = document.querySelector('.viewport-preloader')
+        if (!loader || loader.classList.contains('is-leaving')) {
           restored = true
           requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: y, behavior: 'instant' })))
           observer.disconnect()
