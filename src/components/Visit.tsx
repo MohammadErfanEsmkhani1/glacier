@@ -8,7 +8,7 @@ import { readPersonalIds, writePersonalIds } from '../lib/personalCache'
 
 export default function Visit() {
   const catalog = useCatalog()
-  const { userId, favoriteIds } = useFavorites()
+  const { userId, favoriteIds, loading: favoritesLoading } = useFavorites()
   const [recentIds, setRecentIds] = useState<string[]>([])
   const [historyLoading, setHistoryLoading] = useState(false)
 
@@ -138,7 +138,7 @@ export default function Visit() {
                 <a href="/account" className="text-xs font-medium text-[var(--muted)] transition hover:text-[var(--text)]">View all ↗</a>
               </div>
               <div className="rounded-3xl border border-[var(--line)] bg-[var(--surface)]/60 p-5 sm:p-8">
-                {historyLoading ? <p className="py-8 text-center text-sm text-[var(--muted)]">Loading your favorites…</p> : favoriteTitles.length ? titleGrid(favoriteTitles) : <p className="py-8 text-center text-sm leading-6 text-[var(--muted)]">Your favorite titles will appear here when you save them from the catalogue.</p>}
+                {favoritesLoading ? <p className="py-8 text-center text-sm text-[var(--muted)]">Loading your favorites…</p> : favoriteTitles.length ? titleGrid(favoriteTitles) : <p className="py-8 text-center text-sm leading-6 text-[var(--muted)]">Your favorite titles will appear here when you save them from the catalogue.</p>}
               </div>
             </section>
           </>
