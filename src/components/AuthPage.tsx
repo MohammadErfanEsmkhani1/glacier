@@ -110,7 +110,7 @@ export default function AuthPage({ initialMode }: Props) {
                 onChange={(event) => { setPassword(event.target.value); setFieldErrors((current) => ({ ...current, password: undefined })) }}
                 aria-invalid={Boolean(fieldErrors.password)}
                 aria-describedby={fieldErrors.password ? 'auth-password-error' : undefined}
-                className="w-full rounded-xl border border-[var(--line)] bg-[var(--page)] px-4 py-3.5 pr-20 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                className="w-full rounded-xl border border-[var(--line)] bg-[var(--page)] px-4 py-3.5 pr-12 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
                 placeholder={mode === 'register' ? 'At least 8 characters' : 'Enter your password'}
               />
               <button
@@ -118,9 +118,21 @@ export default function AuthPage({ initialMode }: Props) {
                 onClick={() => setShowPassword((current) => !current)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 aria-pressed={showPassword}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg border border-[#302633] bg-[#17121a] px-3 py-1.5 text-[11px] font-semibold tracking-wide text-[#f2edf3] shadow-sm transition-colors hover:border-[var(--accent)] hover:bg-[#211923] hover:text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--page)]"
+                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--muted)] transition-colors hover:bg-[#211923] hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--page)]"
               >
-                {showPassword ? 'Hide' : 'Show'}
+                {showPassword ? (
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                    <path d="M3 3l18 18" />
+                    <path d="M10.6 10.6a2 2 0 002.8 2.8" />
+                    <path d="M9.9 5.2A10.8 10.8 0 0112 5c5.2 0 9 4.5 10 7-.4 1.1-1.3 2.5-2.7 3.8" />
+                    <path d="M6.2 6.2C3.9 7.7 2.5 10 2 12c1 2.5 4.8 7 10 7 1.3 0 2.5-.3 3.6-.8" />
+                  </svg>
+                ) : (
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
               </button>
             </div>
             {fieldErrors.password && <p id="auth-password-error" className="mt-2 text-xs text-red-400" role="alert">{fieldErrors.password}</p>}
