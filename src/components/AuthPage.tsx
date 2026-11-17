@@ -234,6 +234,9 @@ export default function AuthPage({ initialMode }: Props) {
         if (authError) throw authError
 
         if (data.user?.identities?.length === 0) {
+          localStorage.removeItem('glacier-auth-handoff-id')
+          localStorage.removeItem('glacier-auth-handoff-secret')
+          localStorage.removeItem('glacier-auth-pending-email')
           setError('We could not start a new account with that address. Try signing in, or check the email address and try again.')
           return
         }
@@ -262,6 +265,11 @@ export default function AuthPage({ initialMode }: Props) {
         window.location.assign(safeReturnPath())
       }
     } catch (caught) {
+      if (mode === 'register') {
+        localStorage.removeItem('glacier-auth-handoff-id')
+        localStorage.removeItem('glacier-auth-handoff-secret')
+        localStorage.removeItem('glacier-auth-pending-email')
+      }
       const authCode = caught && typeof caught === 'object' && 'code' in caught
         ? String((caught as { code?: unknown }).code ?? '')
         : ''
