@@ -28,7 +28,8 @@ export default function Visit() {
       const { data, error } = await client.from('user_recently_watched')
         .select('title_id').eq('user_id', userId)
         .order('watched_at', { ascending: false }).limit(5)
-      if (!active) return\n      if (error) { setHistoryLoading(false); return }
+      if (!active) return
+      if (error) { setHistoryLoading(false); return }
       const ids = (data ?? []).map((row) => row.title_id)
       setRecentIds(ids)
       writePersonalIds('recent', userId, ids)
