@@ -69,6 +69,21 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true }, { headers });
     }
 
+    if (action === "renew") {
+      if (typeof secret !== "string" || !/^[0-9a-f]{64}$/i.test(secret)) return Response.json({ error: "Invalid challenge secret" }, { status: 400, headers });
+      const secretHash = await hashSecret(secret);
+      const { data, error } = await admin.from("auth_email_handoffs")
+        .update({ token_hash: null, expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString() })
+        .eq("handoff_id", id)
+        .eq("secret_hash", secretHash)
+        .gt("expires_at", new Date().toISOString())
+        .select("handoff_id")
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return Response.json({ error: "This sign-up request has expired. Please start again." }, { status: 410, headers });
+      return Response.json({ ok: true }, { headers });
+    }
+
     if (action === "poll" || action === "ack") {
       if (typeof secret !== "string" || !/^[0-9a-f]{64}$/i.test(secret)) return Response.json({ error: "Invalid challenge secret" }, { status: 400, headers });
       const secretHash = await hashSecret(secret);
