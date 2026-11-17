@@ -47,10 +47,17 @@ export default function AuthPage({ initialMode }: Props) {
   const [verificationError, setVerificationError] = useState('')
   const [verificationNotice, setVerificationNotice] = useState('')
   const [verificationBusy, setVerificationBusy] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(60)
   const [captchaToken, setCaptchaToken] = useState('')
   const [captchaStatus, setCaptchaStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const captchaContainer = useRef<HTMLDivElement>(null)
   const captchaWidgetId = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!verificationOpen || resendCooldown <= 0) return
+    const timer = window.setTimeout(() => setResendCooldown((current) => Math.max(0, current - 1)), 1000)
+    return () => window.clearTimeout(timer)
+  }, [verificationOpen, resendCooldown])
 
   useEffect(() => {
     if (!TURNSTILE_SITE_KEY) return
@@ -108,6 +115,7 @@ export default function AuthPage({ initialMode }: Props) {
     setPendingEmail(address)
     setVerificationError('')
     setVerificationNotice('')
+    setResendCooldown(60)
     localStorage.setItem('glacier-auth-pending-email', address)
     setVerificationOpen(true)
     setPassword('')
@@ -122,6 +130,7 @@ export default function AuthPage({ initialMode }: Props) {
     setHandoffId('')
     setHandoffSecret('')
     setVerificationNotice('')
+    setResendCooldown(0)
   }
 
   useEffect(() => {
@@ -262,6 +271,25 @@ export default function AuthPage({ initialMode }: Props) {
     }
   }
 
+  const resendLink = async () => {
+    if (!supabase || resendCooldown > 0 || verificationBusy || !handoffId || !handoffSecret) return
+    setVerificationError('')
+    setVerificationNotice('')
+    setVerificationBusy(true)
+    try {
+      const { error: resendError } = await supabase.functions.invoke('email-verification-handoff', {
+        body: { action: 'resend', handoff_id: handoffId, secret: handoffSecret },
+      })
+      if (resendError) throw resendError
+      setVerificationNotice('A fresh confirmation email is on its way. Check your inbox in a moment.')
+      setResendCooldown(60)
+    } catch (caught) {
+      setVerificationError(caught instanceof Error ? caught.message : 'We could not resend the confirmation email. Please try again shortly.')
+    } finally {
+      setVerificationBusy(false)
+    }
+  }
+
   const changeMode = () => {
     setMode(mode === 'login' ? 'register' : 'login')
     setNotice('')
@@ -379,7 +407,10 @@ export default function AuthPage({ initialMode }: Props) {
             {verificationError && <p role="alert" className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs leading-5 text-[var(--text)]">{verificationError}</p>}
             {verificationNotice && <p role="status" className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--page)] p-3 text-xs leading-5 text-[var(--muted)]">{verificationNotice}</p>}
 
-            <div className="mt-6 flex justify-end text-xs">
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <button type="button" disabled={verificationBusy || resendCooldown > 0} onClick={resendLink} className="font-semibold text-[var(--accent)] transition hover:underline disabled:cursor-not-allowed disabled:opacity-50">
+                {resendCooldown > 0 ? `Send another email in ${resendCooldown}s` : 'Send another email'}
+              </button>
               <button type="button" onClick={closeVerification} className="text-[var(--muted)] transition hover:text-[var(--text)]">Use a different email</button>
             </div>
             <p className="mt-6 text-center text-xs leading-5 text-[var(--muted)]">If the email isn’t in your inbox, check your spam folder. If you didn’t ask for a Glacier account, you can simply close this window.</p>
