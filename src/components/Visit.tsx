@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import SectionHeading from './SectionHeading'
 import { getTitleUrl, useCatalog } from '../lib/catalog'
 import { useFavorites } from '../lib/favorites'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../lib/supabase'\nimport { readPersonalIds, writePersonalIds } from '../lib/personalCache'
 
 export default function Visit() {
   const catalog = useCatalog()
@@ -68,7 +68,7 @@ export default function Visit() {
     }
   }, [userId])
 
-  const favoriteTitles = favoriteIds.map((id) => catalog.find((item) => item.id === id)).filter((item) => item !== undefined)
+  const favoriteTitles = favoriteIds.slice(0, 5).map((id) => catalog.find((item) => item.id === id)).filter((item) => item !== undefined)
   const recentTitles = recentIds.map((id) => catalog.find((item) => item.id === id)).filter((item) => item !== undefined)
   const signedIn = Boolean(userId)
 
