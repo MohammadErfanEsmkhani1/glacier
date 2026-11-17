@@ -2,9 +2,12 @@ create table if not exists public.auth_email_handoffs (
   handoff_id uuid primary key,
   secret_hash text not null,
   token_hash text,
+  signup_started_at timestamptz,
   expires_at timestamptz not null,
   created_at timestamptz not null default now()
 );
+alter table public.auth_email_handoffs add column if not exists signup_started_at timestamptz;
+
 create index if not exists auth_email_handoffs_expires_at_idx
   on public.auth_email_handoffs (expires_at);
 alter table public.auth_email_handoffs enable row level security;
