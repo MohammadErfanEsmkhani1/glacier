@@ -78,6 +78,49 @@ function App() {
   const [mode, setMode] = useState<Mode>(() => localStorage.getItem('glacier-mode') === 'light' ? 'light' : 'dark')
 
   useEffect(() => {
+    const key = `glacier-scroll:${window.location.pathname}${window.location.search}${window.location.hash}`
+    const savePosition = () => {
+      try { sessionStorage.setItem(key, String(window.scrollY)) } catch { /* Storage may be unavailable. */ }
+    }
+    const restorePosition = () => {
+      let saved = ''
+      try { saved = sessionStorage.getItem(key) ?? '' } catch { /* Storage may be unavailable. */ }
+      const y = Number(saved)
+      if (!saved || !Number.isFinite(y) || y <= 0) return
+      let restored = false
+      const observer = new MutationObserver(() => {
+        if (!document.querySelector('.viewport-preloader')) {
+          restored = true
+          requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, y)))
+          observer.disconnect()
+        }
+      })
+      observer.observe(document.documentElement, { childList: true, subtree: true })
+      if (!document.querySelector('.viewport-preloader')) {
+        restored = true
+        requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, y)))
+        observer.disconnect()
+      }
+      window.setTimeout(() => {
+        if (!restored) {
+          restored = true
+          requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, y)))
+          observer.disconnect()
+        }
+      }, 1800)
+    }
+    if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual'
+    window.addEventListener('pagehide', savePosition)
+    window.addEventListener('beforeunload', savePosition)
+    restorePosition()
+    return () => {
+      savePosition()
+      window.removeEventListener('pagehide', savePosition)
+      window.removeEventListener('beforeunload', savePosition)
+    }
+  }, [])
+
+  useEffect(() => {
     document.documentElement.dataset.mode = mode
     localStorage.setItem('glacier-mode', mode)
   }, [mode])
