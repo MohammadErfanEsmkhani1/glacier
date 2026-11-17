@@ -75,7 +75,11 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
           { onConflict: 'user_id,title_id' },
         )
         if (historyError) console.error('Could not update recently watched history:', historyError.message)
-        else {\n          const recentIds = readPersonalIds('recent', viewerId).filter((id) => id !== item.id)\n          writePersonalIds('recent', viewerId, [item.id, ...recentIds].slice(0, 50))\n          window.dispatchEvent(new Event('glacier:recently-watched-updated'))\n        }
+        else {
+          const recentIds = readPersonalIds('recent', viewerId).filter((id) => id !== item.id)
+          writePersonalIds('recent', viewerId, [item.id, ...recentIds].slice(0, 50))
+          window.dispatchEvent(new Event('glacier:recently-watched-updated'))
+        }
       }
     }
     void loadTitle()
