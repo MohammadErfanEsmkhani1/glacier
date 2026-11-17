@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { confirmationSupabase, supabase } from '../lib/supabase'
 
 export default function AuthConfirmPage() {
   const [handoffId, setHandoffId] = useState('')
@@ -23,12 +23,12 @@ export default function AuthConfirmPage() {
 
     let active = true
     const checkSession = async () => {
-      if (!supabase) {
+      if (!confirmationSupabase) {
         setFailed(true)
         setMessage('Glacier authentication is not configured. Please return to Glacier.')
         return
       }
-      const { data, error } = await supabase.auth.getSession()
+      const { data, error } = await confirmationSupabase.auth.getSession()
       if (!active) return
       if (error || !data.session) {
         setFailed(true)
@@ -42,11 +42,11 @@ export default function AuthConfirmPage() {
   }, [])
 
   const completeHandoff = async () => {
-    if (!supabase || !handoffId || !handoffSecret || busy || confirmed) return
+    if (!confirmationSupabase || !supabase || !handoffId || !handoffSecret || busy || confirmed) return
     setBusy(true)
     setFailed(false)
     try {
-      const { data, error: sessionError } = await supabase.auth.getSession()
+      const { data, error: sessionError } = await confirmationSupabase.auth.getSession()
       if (sessionError) throw sessionError
       if (!data.session?.access_token || !data.session.refresh_token) {
         throw new Error('The confirmation session is missing. Please open the confirmation email again.')
@@ -54,7 +54,9 @@ export default function AuthConfirmPage() {
       const localId = localStorage.getItem('glacier-auth-handoff-id')
       const localSecret = localStorage.getItem('glacier-auth-handoff-secret')
       if (localId === handoffId && localSecret === handoffSecret) {
-        const { error: ackError } = await supabase.functions.invoke('email-verification-handoff', {
+        const { error: setSessionError } = await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token })
+        if (setSessionError) throw setSessionError
+        const { error: ackError } = await confirmationSupabase.functions.invoke('email-verification-handoff', {
           body: { action: 'ack', handoff_id: handoffId, secret: handoffSecret },
         })
         if (ackError) throw ackError
@@ -65,7 +67,7 @@ export default function AuthConfirmPage() {
         setMessage('Your email is confirmed. You’re signed in to Glacier.')
         window.setTimeout(() => window.location.replace('/'), 700)
       } else {
-        const { error: publishError } = await supabase.functions.invoke('email-verification-handoff', {
+        const { error: publishError } = await confirmationSupabase.functions.invoke('email-verification-handoff', {
           body: {
             action: 'publish',
             handoff_id: handoffId,
@@ -75,7 +77,6 @@ export default function AuthConfirmPage() {
           },
         })
         if (publishError) throw publishError
-        await supabase.auth.signOut({ scope: 'local' })
         setConfirmed(true)
         setMessage('Email confirmed. Return to the original Glacier browser — it will finish signing you in automatically.')
         window.history.replaceState({}, document.title, '/auth/confirm')
