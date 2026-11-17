@@ -118,7 +118,7 @@ export default function AuthPage({ initialMode }: Props) {
                 onClick={() => setShowPassword((current) => !current)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 aria-pressed={showPassword}
-                className="absolute inset-y-0 right-3 my-auto text-xs font-semibold text-[var(--accent)] hover:underline"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-[11px] font-semibold tracking-wide text-[var(--muted)] shadow-sm transition-colors hover:border-[var(--accent)] hover:bg-[var(--page)] hover:text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--page)]"
               >
                 {showPassword ? 'Hide' : 'Show'}
               </button>
