@@ -51,21 +51,35 @@ export default function AuthConfirmPage() {
       if (!data.session?.access_token || !data.session.refresh_token) {
         throw new Error('The confirmation session is missing. Please open the confirmation email again.')
       }
-      const { error: publishError } = await supabase.functions.invoke('email-verification-handoff', {
-        body: {
-          action: 'publish',
-          handoff_id: handoffId,
-          secret: handoffSecret,
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        },
-      })
-      if (publishError) throw publishError
-
-      await supabase.auth.signOut({ scope: 'local' })
-      setConfirmed(true)
-      setMessage('Email confirmed. Return to the original Glacier browser — it will finish signing you in automatically.')
-      window.history.replaceState({}, document.title, '/auth/confirm')
+      const localId = localStorage.getItem('glacier-auth-handoff-id')
+      const localSecret = localStorage.getItem('glacier-auth-handoff-secret')
+      if (localId === handoffId && localSecret === handoffSecret) {
+        const { error: ackError } = await supabase.functions.invoke('email-verification-handoff', {
+          body: { action: 'ack', handoff_id: handoffId, secret: handoffSecret },
+        })
+        if (ackError) throw ackError
+        localStorage.removeItem('glacier-auth-handoff-id')
+        localStorage.removeItem('glacier-auth-handoff-secret')
+        localStorage.removeItem('glacier-auth-pending-email')
+        setConfirmed(true)
+        setMessage('Your email is confirmed. You’re signed in to Glacier.')
+        window.setTimeout(() => window.location.replace('/'), 700)
+      } else {
+        const { error: publishError } = await supabase.functions.invoke('email-verification-handoff', {
+          body: {
+            action: 'publish',
+            handoff_id: handoffId,
+            secret: handoffSecret,
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          },
+        })
+        if (publishError) throw publishError
+        await supabase.auth.signOut({ scope: 'local' })
+        setConfirmed(true)
+        setMessage('Email confirmed. Return to the original Glacier browser — it will finish signing you in automatically.')
+        window.history.replaceState({}, document.title, '/auth/confirm')
+      }
     } catch (error) {
       setFailed(true)
       setMessage(error instanceof Error ? error.message : 'We could not complete sign-in. Please try again.')
