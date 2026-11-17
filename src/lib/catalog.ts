@@ -112,12 +112,12 @@ async function loadCatalog(force = false) {
 }
 
 export function useCatalogReady() {
-  const [ready, setReady] = useState(catalogHasLoaded)
+  const [ready, setReady] = useState(catalogHasLoaded || cachedTitles.length > 0)
 
   useEffect(() => {
     const onReady = () => setReady(true)
     window.addEventListener('glacier:catalogue-ready', onReady)
-    if (catalogHasLoaded) setReady(true)
+    if (catalogHasLoaded || cachedTitles.length > 0) setReady(true)
     return () => window.removeEventListener('glacier:catalogue-ready', onReady)
   }, [])
 
