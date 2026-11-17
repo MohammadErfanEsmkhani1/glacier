@@ -46,6 +46,31 @@ Deno.serve(async (req) => {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
         return Response.json({ error: "Invalid signup email" }, { status: 400, headers });
       }
+      // Check the Auth directory server-side before creating a handoff or sending email.
+      // The admin filter is a substring search, so always enforce exact email equality.
+      const lookupUrl = new URL("/auth/v1/admin/users", url);
+      lookupUrl.searchParams.set("filter", email);
+      const lookupResponse = await fetch(lookupUrl, {
+        headers: {
+          "apikey": serviceKey,
+          "Authorization": `Bearer ${serviceKey}`,
+        },
+      });
+      if (!lookupResponse.ok) {
+        console.error("Could not check whether signup email already exists", lookupResponse.status);
+        throw new Error("Could not validate signup email");
+      }
+      const lookupData = await lookupResponse.json();
+      const emailExists = Array.isArray(lookupData?.users) && lookupData.users.some(
+        (user: { email?: string }) => user.email?.trim().toLowerCase() === email,
+      );
+      if (emailExists) {
+        return Response.json({
+          ok: false,
+          code: "email_exists",
+          error: "This email is already associated with a Glacier account. Please sign in or use a different email address.",
+        }, { headers });
+      }
       const clientIp = (req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown").trim();
       const ipDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(clientIp));
       const ipHash = Array.from(new Uint8Array(ipDigest), (byte) => byte.toString(16).padStart(2, "0")).join("");
