@@ -136,7 +136,11 @@ export function installScrollRestoration() {
 
   const onPageHide = () => {
     window.clearTimeout(saveTimer)
-    savePositionNow()
+    // Preserve the previous target if this reload happens before the page
+    // has enough height to restore it.
+    if (restored || userInteracted || savedPosition === null || Math.abs(window.scrollY - savedPosition) <= 4) {
+      savePositionNow()
+    }
   }
 
   const onVisibilityChange = () => {
