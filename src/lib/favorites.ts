@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { supabase } from './supabase'
+import { supabase } from './supabase'\nimport { readPersonalIds, writePersonalIds } from './personalCache'
 
 type FavoriteChange = { userId: string; titleId: string; saved: boolean }
 const FAVORITES_EVENT = 'glacier:favorites-updated'
@@ -35,7 +35,7 @@ export function useFavorites() {
       setError(queryError.message)
     } else {
       setError('')
-      setFavoriteIds((data ?? []).map((row) => row.title_id))
+      const ids = (data ?? []).map((row) => row.title_id)\n      setFavoriteIds(ids)\n      writePersonalIds('favorites', id, ids)
     }
     setLoading(false)
   }, [])
@@ -69,7 +69,7 @@ export function useFavorites() {
         setLoading(false)
         return
       }
-      void load(id)
+      if (readPersonalIds('favorites', id).length) setLoading(false)\n      void load(id)
     }
 
     void supabase.auth.getSession().then(({ data }) => {
@@ -110,7 +110,7 @@ export function useFavorites() {
     if (result.error) {
       // Roll back the optimistic change if the database did not accept it.
       const rollback: FavoriteChange = { ...change, saved: !shouldSave }
-      setFavoriteIds((current) => applyFavoriteChange(current, rollback))
+      setFavoriteIds((current) => {\n        const next = applyFavoriteChange(current, rollback)\n        writePersonalIds('favorites', id, next)\n        return next\n      })
       window.dispatchEvent(new CustomEvent(FAVORITES_EVENT, { detail: rollback }))
       setError(result.error.message)
       return false
