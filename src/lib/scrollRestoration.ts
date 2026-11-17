@@ -47,9 +47,11 @@ export function installScrollRestoration() {
   let resizeObserver: ResizeObserver | null = null
   let originalScrollBehavior = ''
 
-  // Let the browser restore reload positions itself whenever possible.
+  // Use one restoration owner. Native browser restoration can race this
+  // session snapshot and briefly write an older history-entry position over it.
+  // Manual mode prevents the browser and this helper from competing.
   if ('scrollRestoration' in window.history) {
-    window.history.scrollRestoration = 'auto'
+    window.history.scrollRestoration = 'manual'
   }
 
   const cleanupRestoreObservers = () => {
