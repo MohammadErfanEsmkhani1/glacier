@@ -56,7 +56,7 @@ Set the Site URL to `https://glacier-beta-coral.vercel.app`. Add an exact Vercel
 5. Browser A should automatically verify the signup and sign in.
 6. Repeat with the email opened in the same browser.
 
-The handoff expires after 30 minutes. The browser secret is random and stored only in the original browser's local storage; only its hash is stored server-side. The confirmation page requires an explicit click so automated email-link scanners do not consume the confirmation token.
+The handoff expires after 30 minutes. The browser secret is random and stored only in the original browser's local storage; only its hash is stored server-side. The confirmation page requires an explicit click so automated email-link scanners do not consume the confirmation token. The waiting popup supports resending the same still-valid confirmation link, with a 60-second cooldown and the same server-side rate limit.
 
 ## Security and operational notes
 
