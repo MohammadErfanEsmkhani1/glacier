@@ -91,7 +91,7 @@ export function installScrollRestoration() {
   const attemptRestore = () => {
     if (restored || userInteracted || savedPosition === null || savedPosition <= 0) return
 
-    // Wait until the loading overlay is gone, not merely fading out.
+    // Wait until the loading overlay has unlocked page scrolling.
     const loader = document.querySelector('.viewport-preloader')
     if (loader && !loader.classList.contains('is-leaving')) return
 
@@ -206,11 +206,11 @@ export function installScrollRestoration() {
 
       const reachablePosition = Math.min(
         savedPosition,
-        Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
+        getMaximumScroll(),
       )
       originalScrollBehavior = document.documentElement.style.scrollBehavior
       document.documentElement.style.scrollBehavior = 'auto'
-      window.scrollTo({ top: reachablePosition, left: 0, behavior: 'instant' })
+      window.scrollTo({ top: reachablePosition, left: 0, behavior: 'auto' })
       window.requestAnimationFrame(() => {
         document.documentElement.style.scrollBehavior = originalScrollBehavior
         finishRestoration()
