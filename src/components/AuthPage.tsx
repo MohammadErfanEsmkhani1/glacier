@@ -47,7 +47,6 @@ export default function AuthPage({ initialMode }: Props) {
   const [verificationError, setVerificationError] = useState('')
   const [verificationNotice, setVerificationNotice] = useState('')
   const [verificationBusy, setVerificationBusy] = useState(false)
-  const [resendCooldown, setResendCooldown] = useState(0)
   const [captchaToken, setCaptchaToken] = useState('')
   const [captchaStatus, setCaptchaStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const captchaContainer = useRef<HTMLDivElement>(null)
@@ -105,19 +104,10 @@ export default function AuthPage({ initialMode }: Props) {
     }
   }, [mode])
 
-  useEffect(() => {
-    if (!verificationOpen || resendCooldown <= 0) return
-    const timer = window.setTimeout(() => {
-      setResendCooldown((current) => Math.max(0, current - 1))
-    }, 1000)
-    return () => window.clearTimeout(timer)
-  }, [verificationOpen, resendCooldown])
-
   const openVerification = (address: string) => {
     setPendingEmail(address)
     setVerificationError('')
     setVerificationNotice('')
-    setResendCooldown(60)
     localStorage.setItem('glacier-auth-pending-email', address)
     setVerificationOpen(true)
     setPassword('')
@@ -132,7 +122,6 @@ export default function AuthPage({ initialMode }: Props) {
     setHandoffId('')
     setHandoffSecret('')
     setVerificationNotice('')
-    setResendCooldown(0)
   }
 
   useEffect(() => {
@@ -226,31 +215,18 @@ export default function AuthPage({ initialMode }: Props) {
         localStorage.setItem('glacier-auth-pending-email', trimmedEmail)
         const callback = new URL('/auth/confirm', window.location.origin)
         callback.searchParams.set('handoff_id', challengeId)
-        const { data, error: authError } = await supabase.auth.signUp({
-          email: trimmedEmail,
-          password,
-          options: { emailRedirectTo: callback.toString(), ...(TURNSTILE_SITE_KEY ? { captchaToken } : {}) },
+        const { error: signupError } = await supabase.functions.invoke('email-verification-handoff', {
+          body: {
+            action: 'signup',
+            handoff_id: challengeId,
+            secret: challengeSecret,
+            email: trimmedEmail,
+            password,
+            redirect_origin: window.location.origin,
+            ...(TURNSTILE_SITE_KEY ? { captcha_token: captchaToken } : {}),
+          },
         })
-        if (authError) throw authError
-
-        if (data.user?.identities?.length === 0) {
-          localStorage.removeItem('glacier-auth-handoff-id')
-          localStorage.removeItem('glacier-auth-handoff-secret')
-          localStorage.removeItem('glacier-auth-pending-email')
-          setError('We could not start a new account with that address. Try signing in, or check the email address and try again.')
-          return
-        }
-
-        // Email confirmation must be enabled in the Supabase project. If it is
-        // disabled, do not let this browser continue into Glacier as verified.
-        if (data.session) {
-          await supabase.auth.signOut()
-          localStorage.removeItem('glacier-auth-handoff-id')
-          localStorage.removeItem('glacier-auth-handoff-secret')
-          localStorage.removeItem('glacier-auth-pending-email')
-          setError('Email confirmation is not enabled in Supabase yet. Please enable Confirm email before accepting registrations.')
-          return
-        }
+        if (signupError) throw signupError
 
         setHandoffId(challengeId)
         setHandoffSecret(challengeSecret)
@@ -285,33 +261,6 @@ export default function AuthPage({ initialMode }: Props) {
         window.turnstile.reset(captchaWidgetId.current)
         setCaptchaToken('')
       }
-    }
-  }
-
-  const resendLink = async () => {
-    if (!supabase || resendCooldown > 0 || verificationBusy || !handoffId) return
-    setVerificationError('')
-    setVerificationNotice('')
-    setVerificationBusy(true)
-    try {
-      const { error: renewError } = await supabase.functions.invoke('email-verification-handoff', {
-        body: { action: 'renew', handoff_id: handoffId, secret: handoffSecret },
-      })
-      if (renewError) throw renewError
-      const callback = new URL('/auth/confirm', window.location.origin)
-      callback.searchParams.set('handoff_id', handoffId)
-      const { error: resendError } = await supabase.auth.resend({
-        type: 'signup',
-        email: pendingEmail,
-        options: { emailRedirectTo: callback.toString() },
-      })
-      if (resendError) throw resendError
-      setVerificationNotice('A fresh confirmation link is on its way. Check your inbox in a moment.')
-      setResendCooldown(60)
-    } catch (caught) {
-      setVerificationError(caught instanceof Error ? caught.message : 'We could not send another link just yet. Please try again shortly.')
-    } finally {
-      setVerificationBusy(false)
     }
   }
 
@@ -432,13 +381,10 @@ export default function AuthPage({ initialMode }: Props) {
             {verificationError && <p role="alert" className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs leading-5 text-[var(--text)]">{verificationError}</p>}
             {verificationNotice && <p role="status" className="mt-4 rounded-xl border border-[var(--line)] bg-[var(--page)] p-3 text-xs leading-5 text-[var(--muted)]">{verificationNotice}</p>}
 
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <button type="button" disabled={verificationBusy || resendCooldown > 0} onClick={resendLink} className="font-semibold text-[var(--accent)] transition hover:underline disabled:cursor-not-allowed disabled:opacity-50">
-                {resendCooldown > 0 ? `Send another link in ${resendCooldown}s` : 'Send another link'}
-              </button>
+            <div className="mt-6 flex justify-end text-xs">
               <button type="button" onClick={closeVerification} className="text-[var(--muted)] transition hover:text-[var(--text)]">Use a different email</button>
             </div>
-            <p className="mt-6 text-center text-xs leading-5 text-[var(--muted)]">No rush. If you didn’t ask for a Glacier account, you can simply close this window.</p>
+            <p className="mt-6 text-center text-xs leading-5 text-[var(--muted)]">If the email isn’t in your inbox, check your spam folder. If you didn’t ask for a Glacier account, you can simply close this window.</p>
           </section>
         </div>
       )}
