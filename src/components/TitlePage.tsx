@@ -4,6 +4,7 @@ import { useFavorites } from '../lib/favorites'
 import { supabase } from '../lib/supabase'
 import { getTitleUrl, type CatalogKind, type CatalogTitle } from '../lib/catalog'
 import { getPosterImageSrcSet, getPosterImageUrl } from '../lib/imagekit'
+import { readPersonalIds, writePersonalIds } from '../lib/personalCache'
 
 type TitlePageProps = { titleId?: string; titleSlug?: string }
 
@@ -74,7 +75,7 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
           { onConflict: 'user_id,title_id' },
         )
         if (historyError) console.error('Could not update recently watched history:', historyError.message)
-        else window.dispatchEvent(new Event('glacier:recently-watched-updated'))
+        else {\n          const recentIds = readPersonalIds('recent', viewerId).filter((id) => id !== item.id)\n          writePersonalIds('recent', viewerId, [item.id, ...recentIds].slice(0, 50))\n          window.dispatchEvent(new Event('glacier:recently-watched-updated'))\n        }
       }
     }
     void loadTitle()
