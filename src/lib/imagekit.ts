@@ -24,3 +24,24 @@ export function getPosterImageUrl(source: string | null | undefined, width = 360
     return source
   }
 }
+
+/**
+ * Build responsive candidates for browsers that support srcSet.
+ * Returns undefined for external URLs or URLs that already contain
+ * an ImageKit transformation, leaving the existing src as the fallback.
+ */
+export function getPosterImageSrcSet(source: string | null | undefined): string | undefined {
+  if (!source) return undefined
+
+  const widths = [240, 360, 480, 640, 800]
+  const candidates = widths.map((width) => {
+    const url = getPosterImageUrl(source, width)
+    return url ? `${url} ${width}w` : ''
+  }).filter(Boolean)
+
+  if (candidates.length !== widths.length) return undefined
+  const urls = candidates.map((candidate) => candidate.slice(0, candidate.lastIndexOf(' ')))
+  if (new Set(urls).size === 1) return undefined
+
+  return candidates.join(', ')
+}
