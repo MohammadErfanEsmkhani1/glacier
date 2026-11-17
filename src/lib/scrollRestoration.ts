@@ -24,6 +24,12 @@ function writeSavedPosition(key: string, position: number) {
   }
 }
 
+function getMaximumScroll() {
+  const scrollHeight = document.scrollingElement?.scrollHeight ??
+    Math.max(document.documentElement.scrollHeight, document.body?.scrollHeight ?? 0)
+  return Math.max(0, scrollHeight - window.innerHeight)
+}
+
 /**
  * Keeps the browser's native reload restoration enabled and adds a session
  * snapshot fallback for pages whose React content grows after first paint.
@@ -87,7 +93,7 @@ export function installScrollRestoration() {
     const loader = document.querySelector('.viewport-preloader')
     if (loader && !loader.classList.contains('is-leaving')) return
 
-    const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+    const maxScroll = getMaximumScroll()
     const currentScroll = window.scrollY
 
     // Native browser restoration may already have placed us correctly.
@@ -102,7 +108,7 @@ export function installScrollRestoration() {
 
     originalScrollBehavior = document.documentElement.style.scrollBehavior
     document.documentElement.style.scrollBehavior = 'auto'
-    window.scrollTo({ top: savedPosition, left: 0, behavior: 'instant' })
+    window.scrollTo({ top: savedPosition, left: 0, behavior: 'auto' })
 
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
