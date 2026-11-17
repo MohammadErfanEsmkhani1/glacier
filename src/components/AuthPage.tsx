@@ -216,10 +216,16 @@ export default function AuthPage({ initialMode }: Props) {
       if (mode === 'register') {
         const challengeId = crypto.randomUUID()
         const challengeSecret = Array.from(crypto.getRandomValues(new Uint8Array(32)), (byte) => byte.toString(16).padStart(2, '0')).join('')
-        const { error: challengeError } = await supabase.functions.invoke('email-verification-handoff', {
+        const { data: challengeData, error: challengeError } = await supabase.functions.invoke('email-verification-handoff', {
           body: { action: 'create', handoff_id: challengeId, secret: challengeSecret, email: trimmedEmail },
         })
         if (challengeError) throw challengeError
+        if (challengeData?.code === 'email_exists') {
+          throw new Error(challengeData.error || 'This email is already associated with a Glacier account. Please sign in or use a different email address.')
+        }
+        if (challengeData?.ok !== true) {
+          throw new Error('We could not validate this email address. Please try again.')
+        }
         localStorage.setItem('glacier-auth-handoff-id', challengeId)
         localStorage.setItem('glacier-auth-handoff-secret', challengeSecret)
         localStorage.setItem('glacier-auth-pending-email', trimmedEmail)
