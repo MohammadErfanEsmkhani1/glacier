@@ -38,6 +38,12 @@ Deno.serve(async (req) => {
 
     if (action === "create") {
       if (typeof secret !== "string" || !/^[0-9a-f]{64}$/i.test(secret)) return Response.json({ error: "Invalid challenge secret" }, { status: 400, headers });
+      const clientIp = (req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown").trim();
+      const ipDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(clientIp));
+      const ipHash = Array.from(new Uint8Array(ipDigest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+      const { data: allowed, error: rateError } = await admin.rpc("consume_auth_email_handoff_rate_limit", { p_ip_hash: ipHash });
+      if (rateError) throw rateError;
+      if (allowed !== true) return Response.json({ error: "Too many sign-up attempts from this connection. Please wait a few minutes and try again." }, { status: 429, headers });
       await admin.from("auth_email_handoffs").delete().lt("expires_at", new Date().toISOString());
       const { error } = await admin.from("auth_email_handoffs").insert({
         handoff_id: id,
