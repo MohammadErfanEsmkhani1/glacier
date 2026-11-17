@@ -42,6 +42,10 @@ Deno.serve(async (req) => {
     const secretHash = await hashSecret(secret);
 
     if (action === "create") {
+      const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > 254) {
+        return Response.json({ error: "Invalid signup email" }, { status: 400, headers });
+      }
       const clientIp = (req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown").trim();
       const ipDigest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(clientIp));
       const ipHash = Array.from(new Uint8Array(ipDigest), (byte) => byte.toString(16).padStart(2, "0")).join("");
@@ -52,6 +56,7 @@ Deno.serve(async (req) => {
       const { error } = await admin.from("auth_email_handoffs").insert({
         handoff_id: id,
         secret_hash: secretHash,
+        email_address: email,
         expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
       });
       if (error) throw error;
@@ -65,6 +70,10 @@ Deno.serve(async (req) => {
           typeof refreshToken !== "string" || refreshToken.length < 20 || refreshToken.length > 2048) {
         return Response.json({ error: "Invalid confirmation session" }, { status: 400, headers });
       }
+      const { data: authData, error: authError } = await admin.auth.getUser(accessToken);
+      if (authError || !authData.user?.email || !authData.user.email_confirmed_at) {
+        return Response.json({ error: "The confirmation session is invalid or the email is not confirmed." }, { status: 401, headers });
+      }
       const { data, error } = await admin.from("auth_email_handoffs")
         .update({
           session_access_token: accessToken,
@@ -73,6 +82,7 @@ Deno.serve(async (req) => {
         })
         .eq("handoff_id", id)
         .eq("secret_hash", secretHash)
+        .eq("email_address", authData.user.email.toLowerCase())
         .gt("expires_at", new Date().toISOString())
         .is("session_refresh_token", null)
         .select("handoff_id")
