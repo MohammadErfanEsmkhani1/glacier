@@ -59,7 +59,7 @@ Important:
 1. Open Glacier in Browser A and register with an email address you control.
 2. Leave the friendly verification popup open in Browser A.
 3. Open the confirmation email on a different device or browser.
-4. The email link should show a friendly confirmation page there.
+4. The email link should show a friendly confirmation page there. Click **Confirm my email** on that page; this explicit click prevents email-security scanners from confirming accounts just by prefetching the link.
 5. Browser A should automatically complete verification and sign in.
 6. Repeat with the email link opened in the same browser to verify the same-browser case.
 
