@@ -213,8 +213,6 @@ export default function AuthPage({ initialMode }: Props) {
         localStorage.setItem('glacier-auth-handoff-id', challengeId)
         localStorage.setItem('glacier-auth-handoff-secret', challengeSecret)
         localStorage.setItem('glacier-auth-pending-email', trimmedEmail)
-        const callback = new URL('/auth/confirm', window.location.origin)
-        callback.searchParams.set('handoff_id', challengeId)
         const { error: signupError } = await supabase.functions.invoke('email-verification-handoff', {
           body: {
             action: 'signup',
