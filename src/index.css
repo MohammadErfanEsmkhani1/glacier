@@ -333,6 +333,10 @@
 
 
 /* Title-page download quality selector. */
+.download-panel,
+.download-panel * {
+  font-family:'Inter',ui-sans-serif,system-ui,sans-serif;
+}
 .download-panel {
   position:relative;
   isolation:isolate;
