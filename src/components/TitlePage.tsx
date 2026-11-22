@@ -166,7 +166,7 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
                     <span className="download-format-dot" aria-hidden="true" />
                     <span>VIDEO QUALITY</span>
                     <span className="download-format-divider" />
-                    <span>4 OPTIONS</span>
+                    <span>{availableDownloadQualities.length} OPTIONS</span>
                   </div>
                 </div>
 
