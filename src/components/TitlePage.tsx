@@ -40,7 +40,7 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [selectedQuality, setSelectedQuality] = useState<DownloadQuality>('720p')
-  const [downloadNotice, setDownloadNotice] = useState(false)
+  const [downloadLinks, setDownloadLinks] = useState<Partial<Record<DownloadQuality, string>>>({})
 
   useEffect(() => {
     let active = true
@@ -73,6 +73,17 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
         featured: data.featured,
       }
       setTitle(item)
+      const { data: linkRows, error: linkError } = await supabase.from('title_download_links').select('quality,url').eq('title_id', item.id)
+      if (!active) return
+      if (linkError) console.error('Could not load title download links:', linkError.message)
+      const nextLinks: Partial<Record<DownloadQuality, string>> = {}
+      for (const row of linkRows ?? []) {
+        if (['360p', '480p', '720p', '1080p'].includes(row.quality) && typeof row.url === 'string' && row.url.trim()) {
+          nextLinks[row.quality as DownloadQuality] = row.url
+        }
+      }
+      setDownloadLinks(nextLinks)
+      if (!nextLinks[selectedQuality]) setSelectedQuality((['720p', '1080p', '480p', '360p'] as DownloadQuality[]).find((quality) => nextLinks[quality]) ?? '720p')
       setLoading(false)
 
       const canonicalUrl = getTitleUrl(item)
@@ -102,6 +113,8 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
     return () => { active = false }
   }, [titleId, titleSlug])
 
+  const availableDownloadQualities = downloadQualities.filter((quality) => Boolean(downloadLinks[quality.value]))
+  const activeDownloadQuality = availableDownloadQualities.find((quality) => quality.value === selectedQuality) ?? availableDownloadQualities[0]
   const isFavorite = Boolean(title && favoriteIds.includes(title.id))
   const returnTo = getSafeReturnPath()
 
@@ -134,7 +147,7 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
               </div>
             </motion.article>
 
-            <motion.section
+            {availableDownloadQualities.length > 0 && <motion.section
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.12 }}
@@ -158,14 +171,14 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
                 </div>
 
                 <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4" role="group" aria-label="Choose download quality">
-                  {downloadQualities.map((quality) => {
+                  {availableDownloadQualities.map((quality) => {
                     const isSelected = selectedQuality === quality.value
                     return (
                       <button
                         key={quality.value}
                         type="button"
                         aria-pressed={isSelected}
-                        onClick={() => { setSelectedQuality(quality.value); setDownloadNotice(false) }}
+                        onClick={() => setSelectedQuality(quality.value)}
                         className={'download-quality-card' + (isSelected ? ' is-selected' : '')}
                       >
                         <span className="flex w-full items-center justify-between gap-2">
@@ -192,23 +205,17 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
                 <div className="download-action-row">
                   <div className="min-w-0">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">Selected quality</p>
-                    <p className="mt-1 font-serif text-xl text-[var(--text)]">{selectedQuality}</p>
+                    <p className="mt-1 font-serif text-xl text-[var(--text)]">{activeDownloadQuality?.value}</p>
                   </div>
-                  <button type="button" className="download-action-button" onClick={() => setDownloadNotice(true)}>
+                  <a href={activeDownloadQuality ? downloadLinks[activeDownloadQuality.value] : undefined} target="_blank" rel="noopener noreferrer" className="download-action-button" download>
                     <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
                       <path d="M10 2.75v9.5m0 0 3.5-3.5M10 12.25l-3.5-3.5M3.25 13.5v2.25c0 .55.45 1 1 1h11.5c.55 0 1-.45 1-1V13.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     Download
-                  </button>
+                  </a>
                 </div>
-                {downloadNotice && (
-                  <p role="status" className="download-preview-notice">
-                    Your {selectedQuality} option is selected. Download links will be connected in the next step.
-                  </p>
-                )}
-                <p className="mt-5 text-xs leading-6 text-[var(--muted)]">Download availability and file links will appear here once the download service is connected.</p>
               </div>
-            </motion.section>
+            </motion.section>}
           </>
         )}
       </div>
