@@ -12,12 +12,14 @@ type DownloadQuality = '360p' | '480p' | '720p' | '1080p'
 const downloadQualities: {
   value: DownloadQuality
   name: string
+  description: string
+  level: number
   recommended?: boolean
 }[] = [
-  { value: '360p', name: 'Low' },
-  { value: '480p', name: 'SD' },
-  { value: '720p', name: 'HD', recommended: true },
-  { value: '1080p', name: 'Full HD' },
+  { value: '360p', name: 'Low', description: 'Lighter on data', level: 1 },
+  { value: '480p', name: 'SD', description: 'Everyday viewing', level: 2 },
+  { value: '720p', name: 'HD', description: 'Sharp HD picture', level: 3, recommended: true },
+  { value: '1080p', name: 'Full HD', description: 'Extra crisp detail', level: 4 },
 ]
 
 function getSafeReturnPath() {
@@ -175,6 +177,12 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
                           )}
                         </span>
                         <span className="download-quality-name">{quality.name}</span>
+                        <span className="download-quality-description">{quality.description}</span>
+                        <span className="download-quality-meter" aria-label={`Quality level ${quality.level} of 4`}>
+                          {Array.from({ length: 4 }, (_, index) => (
+                            <span key={index} className={index < quality.level ? 'is-filled' : ''} />
+                          ))}
+                        </span>
                         {quality.recommended && <span className="download-recommended">RECOMMENDED</span>}
                       </button>
                     )
