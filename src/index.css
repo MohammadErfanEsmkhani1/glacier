@@ -452,10 +452,11 @@
 }
 .download-quality-resolution {
   color:var(--text);
-  font-family:'Playfair Display',Georgia,serif;
+  font-family:'Inter',ui-sans-serif,system-ui,sans-serif;
   font-size:1.8rem;
-  font-weight:700;
-  letter-spacing:-.045em;
+  font-weight:750;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-.055em;
   line-height:1;
 }
 .download-quality-detail {
@@ -477,6 +478,32 @@
   color:var(--muted);
   font-size:.67rem;
   line-height:1.6;
+}
+.download-quality-meter {
+  display:flex;
+  width:56%;
+  align-items:center;
+  gap:.28rem;
+  margin-top:auto;
+  padding-top:1.05rem;
+}
+.download-quality-meter > span {
+  display:block;
+  height:.22rem;
+  flex:1;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--muted) 20%,transparent);
+  transition:background .22s ease,box-shadow .22s ease;
+}
+.download-quality-meter > span.is-filled {
+  background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 68%,white 32%));
+  box-shadow:0 0 10px color-mix(in srgb,var(--accent) 23%,transparent);
+}
+.download-quality-card.is-selected .download-quality-meter > span.is-filled {
+  box-shadow:0 0 13px color-mix(in srgb,var(--accent) 34%,transparent);
+}
+.download-quality-card:focus-visible .download-quality-meter > span.is-filled {
+  background:var(--accent);
 }
 .download-quality-radio,
 .download-quality-check {
