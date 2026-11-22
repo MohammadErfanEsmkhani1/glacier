@@ -13,13 +13,12 @@ const downloadQualities: {
   value: DownloadQuality
   name: string
   description: string
-  level: number
   recommended?: boolean
 }[] = [
-  { value: '360p', name: 'Low', description: 'Lighter on data', level: 1 },
-  { value: '480p', name: 'SD', description: 'Everyday viewing', level: 2 },
-  { value: '720p', name: 'HD', description: 'Sharp HD picture', level: 3, recommended: true },
-  { value: '1080p', name: 'Full HD', description: 'Extra crisp detail', level: 4 },
+  { value: '360p', name: 'Low', description: 'Lighter on data' },
+  { value: '480p', name: 'SD', description: 'Everyday viewing' },
+  { value: '720p', name: 'HD', description: 'Sharp HD picture', recommended: true },
+  { value: '1080p', name: 'Full HD', description: 'Extra crisp detail' },
 ]
 
 function getSafeReturnPath() {
@@ -171,7 +170,7 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
                 </div>
 
                 <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4" role="group" aria-label="Choose download quality">
-                  {availableDownloadQualities.map((quality) => {
+                  {availableDownloadQualities.map((quality, qualityIndex) => {
                     const isSelected = selectedQuality === quality.value
                     return (
                       <button
@@ -191,9 +190,9 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
                         </span>
                         <span className="download-quality-name">{quality.name}</span>
                         <span className="download-quality-description">{quality.description}</span>
-                        <span className="download-quality-meter" aria-label={`Quality level ${quality.level} of 4`}>
-                          {Array.from({ length: 4 }, (_, index) => (
-                            <span key={index} className={index < quality.level ? 'is-filled' : ''} />
+                        <span className="download-quality-meter" aria-label={`Quality level ${qualityIndex + 1} of ${availableDownloadQualities.length}`}>
+                          {Array.from({ length: availableDownloadQualities.length }, (_, index) => (
+                            <span key={index} className={index <= qualityIndex ? 'is-filled' : ''} />
                           ))}
                         </span>
                         {quality.recommended && <span className="download-recommended">RECOMMENDED</span>}
