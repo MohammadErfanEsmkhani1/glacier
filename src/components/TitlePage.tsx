@@ -7,6 +7,20 @@ import { getPosterImageSrcSet, getPosterImageUrl } from '../lib/imagekit'
 import { readPersonalIds, writePersonalIds } from '../lib/personalCache'
 
 type TitlePageProps = { titleId?: string; titleSlug?: string }
+type DownloadQuality = '360p' | '480p' | '720p' | '1080p'
+
+const downloadQualities: {
+  value: DownloadQuality
+  name: string
+  detail: string
+  description: string
+  recommended?: boolean
+}[] = [
+  { value: '360p', name: 'Data saver', detail: '640 × 360', description: 'A lighter option for smaller screens and limited bandwidth.' },
+  { value: '480p', name: 'Standard', detail: '854 × 480', description: 'A comfortable everyday viewing experience.' },
+  { value: '720p', name: 'High definition', detail: '1280 × 720', description: 'Crisp detail with a balanced picture size.', recommended: true },
+  { value: '1080p', name: 'Full HD', detail: '1920 × 1080', description: 'The sharpest picture quality in this selection.' },
+]
 
 function getSafeReturnPath() {
   const fallback = '/categories'
@@ -25,6 +39,8 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
   const [title, setTitle] = useState<CatalogTitle | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [selectedQuality, setSelectedQuality] = useState<DownloadQuality>('720p')
+  const [downloadNotice, setDownloadNotice] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -98,24 +114,98 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
         ) : loadError || !title ? (
           <div className="mx-auto max-w-xl py-24 text-center"><h1 className="font-serif text-4xl text-[var(--text)]">Title unavailable</h1><p className="mt-4 text-sm leading-7 text-[var(--muted)]">{loadError}</p><a href={returnTo} className="mt-7 inline-flex rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[#101628]">Go back</a></div>
         ) : (
-          <motion.article initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }} className="mt-10 grid items-start gap-10 md:grid-cols-[minmax(184px,0.55fr)_1.45fr] md:gap-16">
-            <div className="mx-auto w-full max-w-[184px]">
-              {title.poster_url ? <img src={getPosterImageUrl(title.poster_url, 360)} srcSet={getPosterImageSrcSet(title.poster_url)} sizes="184px" alt={'Poster for ' + title.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-2xl" /> : <div className="catalogue-artwork home-artwork artwork-0 aspect-[2/3] w-full rounded-xl"><span className="rounded-full border border-white/25 bg-black/20 px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-white">{title.kind}</span></div>}
-            </div>
-            <div className="flex flex-col justify-center py-1 md:min-h-[276px]">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">{title.kind === 'movie' ? 'Movie' : 'Series'} · Glacier catalogue</p>
-              <h1 className="mt-5 font-serif text-4xl leading-tight text-[var(--text)] sm:text-5xl">{title.title}</h1>
-              <p className="mt-5 text-sm text-[var(--muted)]">{title.year}{title.genre ? ' · ' + title.genre : ''}</p>
-              <div className="mt-8 h-px w-20 bg-[var(--accent)]/60" />
-              <h2 className="mt-8 font-serif text-2xl text-[var(--text)]">About this title</h2>
-              <p className="mt-4 max-w-2xl whitespace-pre-line text-sm leading-8 text-[var(--muted)]">{title.description || 'More details about this title will be added soon.'}</p>
-              {userId ? (
-                <button type="button" disabled={favoritesLoading} aria-pressed={isFavorite} onClick={() => void toggleFavorite(title.id)} className="mt-9 rounded-full border border-[var(--line)] px-6 py-3 text-sm font-medium text-[var(--text)] transition hover:border-[var(--accent)] hover:bg-[var(--surface)] disabled:opacity-50">{isFavorite ? '♥ Saved to favorites' : '♡ Add to favorites'}</button>
-              ) : (
-                <a href="/register" className="mt-9 inline-flex rounded-full border border-[var(--line)] px-6 py-3 text-sm font-medium text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--text)]">Sign in to save</a>
-              )}
-            </div>
-          </motion.article>
+          <>
+            <motion.article initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }} className="mt-10 grid items-start gap-10 md:grid-cols-[minmax(184px,0.55fr)_1.45fr] md:gap-16">
+              <div className="mx-auto w-full max-w-[184px]">
+                {title.poster_url ? <img src={getPosterImageUrl(title.poster_url, 360)} srcSet={getPosterImageSrcSet(title.poster_url)} sizes="184px" alt={'Poster for ' + title.title} className="aspect-[2/3] w-full rounded-xl border border-[var(--line)] object-cover shadow-2xl" /> : <div className="catalogue-artwork home-artwork artwork-0 aspect-[2/3] w-full rounded-xl"><span className="rounded-full border border-white/25 bg-black/20 px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-white">{title.kind}</span></div>}
+              </div>
+              <div className="flex flex-col justify-center py-1 md:min-h-[276px]">
+                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">{title.kind === 'movie' ? 'Movie' : 'Series'} · Glacier catalogue</p>
+                <h1 className="mt-5 font-serif text-4xl leading-tight text-[var(--text)] sm:text-5xl">{title.title}</h1>
+                <p className="mt-5 text-sm text-[var(--muted)]">{title.year}{title.genre ? ' · ' + title.genre : ''}</p>
+                <div className="mt-8 h-px w-20 bg-[var(--accent)]/60" />
+                <h2 className="mt-8 font-serif text-2xl text-[var(--text)]">About this title</h2>
+                <p className="mt-4 max-w-2xl whitespace-pre-line text-sm leading-8 text-[var(--muted)]">{title.description || 'More details about this title will be added soon.'}</p>
+                {userId ? (
+                  <button type="button" disabled={favoritesLoading} aria-pressed={isFavorite} onClick={() => void toggleFavorite(title.id)} className="mt-9 rounded-full border border-[var(--line)] px-6 py-3 text-sm font-medium text-[var(--text)] transition hover:border-[var(--accent)] hover:bg-[var(--surface)] disabled:opacity-50">{isFavorite ? '♥ Saved to favorites' : '♡ Add to favorites'}</button>
+                ) : (
+                  <a href="/register" className="mt-9 inline-flex rounded-full border border-[var(--line)] px-6 py-3 text-sm font-medium text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--text)]">Sign in to save</a>
+                )}
+              </div>
+            </motion.article>
+
+            <motion.section
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.12 }}
+              aria-labelledby="download-heading"
+              className="download-panel mt-16"
+            >
+              <div className="download-panel-glow" aria-hidden="true" />
+              <div className="relative z-10">
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="download-eyebrow">Your viewing experience</p>
+                    <h2 id="download-heading" className="mt-3 font-serif text-3xl text-[var(--text)] sm:text-4xl">Download</h2>
+                    <p className="mt-3 max-w-xl text-sm leading-7 text-[var(--muted)]">Choose the picture quality that works best for you. You can change your selection at any time.</p>
+                  </div>
+                  <div className="download-format-chip">
+                    <span className="download-format-dot" aria-hidden="true" />
+                    <span>VIDEO QUALITY</span>
+                    <span className="download-format-divider" />
+                    <span>4 OPTIONS</span>
+                  </div>
+                </div>
+
+                <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4" role="group" aria-label="Choose download quality">
+                  {downloadQualities.map((quality) => {
+                    const isSelected = selectedQuality === quality.value
+                    return (
+                      <button
+                        key={quality.value}
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => { setSelectedQuality(quality.value); setDownloadNotice(false) }}
+                        className={'download-quality-card' + (isSelected ? ' is-selected' : '')}
+                      >
+                        <span className="flex w-full items-center justify-between gap-2">
+                          <span className="download-quality-resolution">{quality.value}</span>
+                          {isSelected ? (
+                            <span className="download-quality-check" aria-label="Selected">✓</span>
+                          ) : (
+                            <span className="download-quality-radio" aria-hidden="true" />
+                          )}
+                        </span>
+                        <span className="download-quality-detail">{quality.detail}</span>
+                        <span className="download-quality-name">{quality.name}</span>
+                        <span className="download-quality-description">{quality.description}</span>
+                        {quality.recommended && <span className="download-recommended">RECOMMENDED</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div className="download-action-row">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">Selected quality</p>
+                    <p className="mt-1 font-serif text-xl text-[var(--text)]">{selectedQuality}</p>
+                  </div>
+                  <button type="button" className="download-action-button" onClick={() => setDownloadNotice(true)}>
+                    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
+                      <path d="M10 2.75v9.5m0 0 3.5-3.5M10 12.25l-3.5-3.5M3.25 13.5v2.25c0 .55.45 1 1 1h11.5c.55 0 1-.45 1-1V13.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Download {selectedQuality}
+                  </button>
+                </div>
+                {downloadNotice && (
+                  <p role="status" className="download-preview-notice">
+                    Your {selectedQuality} option is selected. Download links will be connected in the next step.
+                  </p>
+                )}
+                <p className="mt-5 text-xs leading-6 text-[var(--muted)]">Download availability and file links will appear here once the download service is connected.</p>
+              </div>
+            </motion.section>
+          </>
         )}
       </div>
     </main>
