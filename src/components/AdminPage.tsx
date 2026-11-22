@@ -24,6 +24,7 @@ export default function AdminPage() {
   const [palette, setPalette] = useState<Palette>(getPalette())
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
+  const [savingDownloadLinks, setSavingDownloadLinks] = useState(false)
   const [initialDataReady, setInitialDataReady] = useState(false)
   const sortedTitles = useMemo(() => [...titles].sort((a, b) => a.title.localeCompare(b.title)), [titles])
   const updateDraft = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((current) => ({ ...current, [key]: value }))
@@ -131,28 +132,37 @@ export default function AdminPage() {
   }, [downloadTitleId, downloadLinks])
 
   const saveDownloadLinks = async () => {
-    if (!supabase || !downloadTitleId) return
-    setBusy(true); setNotice('')
-    const rows = downloadQualities.flatMap((quality) => {
-      const url = downloadDraft[quality].trim()
-      return url ? [{ title_id: downloadTitleId, quality, url }] : []
-    })
-    const { error: saveError } = rows.length
-      ? await supabase.from('title_download_links').upsert(rows, { onConflict: 'title_id,quality' })
-      : { error: null }
-    if (saveError) {
-      setBusy(false); setNotice('Could not save download links: ' + saveError.message); return
-    }
-    for (const quality of downloadQualities) {
-      if (downloadDraft[quality].trim()) continue
-      const { error } = await supabase.from('title_download_links').delete().eq('title_id', downloadTitleId).eq('quality', quality)
-      if (error) {
-        setBusy(false); setNotice('Some links could not be cleared: ' + error.message); await loadData(); return
+    if (!supabase || !downloadTitleId || savingDownloadLinks) return
+    setSavingDownloadLinks(true)
+    setNotice('')
+    try {
+      const rows = downloadQualities.flatMap((quality) => {
+        const url = downloadDraft[quality].trim()
+        return url ? [{ title_id: downloadTitleId, quality, url }] : []
+      })
+      const { error: saveError } = rows.length
+        ? await supabase.from('title_download_links').upsert(rows, { onConflict: 'title_id,quality' })
+        : { error: null }
+      if (saveError) {
+        setNotice('Could not save download links: ' + saveError.message)
+        return
       }
+      for (const quality of downloadQualities) {
+        if (downloadDraft[quality].trim()) continue
+        const { error } = await supabase.from('title_download_links').delete().eq('title_id', downloadTitleId).eq('quality', quality)
+        if (error) {
+          setNotice('Some links could not be cleared: ' + error.message)
+          await loadData()
+          return
+        }
+      }
+      setDownloadLinks((current) => ({ ...current, [downloadTitleId]: Object.fromEntries(rows.map((row) => [row.quality, row.url])) }))
+      setNotice('Download links saved for this title.')
+    } catch (error) {
+      setNotice('Could not save download links: ' + (error instanceof Error ? error.message : 'Please try again.'))
+    } finally {
+      setSavingDownloadLinks(false)
     }
-    setBusy(false)
-    setDownloadLinks((current) => ({ ...current, [downloadTitleId]: Object.fromEntries(rows.map((row) => [row.quality, row.url])) }))
-    setNotice('Download links saved for this title.')
   }
 
   const saveCopy = async () => {
@@ -220,7 +230,7 @@ export default function AdminPage() {
             {titles.length === 0 && <p className="rounded-xl border border-dashed border-[var(--line)] p-8 text-center text-sm text-[var(--muted)]">Your catalogue is empty. Add a title to begin.</p>}</div>
           </div>
         </section>}
-        {tab === 'downloads' && <section className="admin-panel mt-7"><h2 className="font-serif text-2xl text-[var(--text)]">Title download links</h2><p className="mt-2 text-sm text-[var(--muted)]">Add a URL for each available quality. Leave a field empty to hide that quality on the title page.</p>{titles.length === 0 ? <p className="mt-5 text-sm text-[var(--muted)]">Add a title to the catalogue first.</p> : <><label className="admin-label mt-6">Choose title<select value={downloadTitleId} onChange={(e) => setDownloadTitleId(e.target.value)} className="admin-field">{sortedTitles.map((item) => <option key={item.id} value={item.id}>{item.title} ({item.year})</option>)}</select></label><div className="mt-6 grid gap-4 sm:grid-cols-2">{downloadQualities.map((quality) => <label key={quality} className="admin-label">{quality} download URL<input type="url" value={downloadDraft[quality]} onChange={(e) => setDownloadDraft((current) => ({ ...current, [quality]: e.target.value }))} className="admin-field" placeholder="https://..." /></label>)}</div><div className="mt-6 flex flex-wrap items-center gap-3"><button disabled={busy || !downloadTitleId} type="button" onClick={() => void saveDownloadLinks()} className="admin-primary">{busy ? 'Saving…' : 'Save download links'}</button><span className="text-xs text-[var(--muted)]">Only non-empty links appear to visitors.</span></div></>}</section>}
+        {tab === 'downloads' && <section className="admin-panel mt-7"><h2 className="font-serif text-2xl text-[var(--text)]">Title download links</h2><p className="mt-2 text-sm text-[var(--muted)]">Add a URL for each available quality. Leave a field empty to hide that quality on the title page.</p>{titles.length === 0 ? <p className="mt-5 text-sm text-[var(--muted)]">Add a title to the catalogue first.</p> : <><label className="admin-label mt-6">Choose title<select value={downloadTitleId} onChange={(e) => setDownloadTitleId(e.target.value)} className="admin-field">{sortedTitles.map((item) => <option key={item.id} value={item.id}>{item.title} ({item.year})</option>)}</select></label><div className="mt-6 grid gap-4 sm:grid-cols-2">{downloadQualities.map((quality) => <label key={quality} className="admin-label">{quality} download URL<input type="url" value={downloadDraft[quality]} onChange={(e) => setDownloadDraft((current) => ({ ...current, [quality]: e.target.value }))} className="admin-field" placeholder="https://..." /></label>)}</div><div className="mt-6 flex flex-wrap items-center gap-3"><button disabled={savingDownloadLinks || !downloadTitleId} type="button" onClick={() => void saveDownloadLinks()} className="admin-primary">{savingDownloadLinks ? 'Saving…' : 'Save download links'}</button><span className="text-xs text-[var(--muted)]">Only non-empty links appear to visitors.</span></div></>}</section>}
         {tab === 'content' && <section className="admin-panel mt-7"><h2 className="font-serif text-2xl text-[var(--text)]">Edit section titles and descriptions</h2><p className="mt-2 text-sm text-[var(--muted)]">Changes are saved to the shared database.</p><div className="mt-6 grid gap-5 md:grid-cols-2">{Object.entries(sectionLabels).map(([key,label]) => <div key={key} className="rounded-xl border border-[var(--line)] p-4"><p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--accent)]">{label}</p><label className="admin-label">Title<input value={copy[key]?.title ?? ''} onChange={(e) => setCopy((c) => ({...c,[key]:{...(c[key] ?? {title:'',description:''}),title:e.target.value}}))} className="admin-field" /></label><label className="admin-label mt-3">Description<textarea rows={3} value={copy[key]?.description ?? ''} onChange={(e) => setCopy((c) => ({...c,[key]:{...(c[key] ?? {title:'',description:''}),description:e.target.value}}))} className="admin-field" /></label></div>)}</div><button disabled={busy} type="button" onClick={() => void saveCopy()} className="admin-primary mt-6">{busy ? 'Saving…' : 'Save section content'}</button></section>}
         {tab === 'seo' && <section className="admin-panel mt-7"><h2 className="font-serif text-2xl text-[var(--text)]">Search engine settings</h2><p className="mt-2 text-sm text-[var(--muted)]">Set the browser title and search description for every page.</p><div className="mt-6 space-y-4">{Object.entries(pageLabels).map(([key,label]) => <div key={key} className="grid gap-3 rounded-xl border border-[var(--line)] p-4 md:grid-cols-[140px_1fr]"><p className="pt-2 text-sm font-medium text-[var(--text)]">{label}</p><div className="space-y-3"><label className="admin-label">SEO title<input value={seo[key]?.title ?? ''} onChange={(e) => setSeo((c) => ({...c,[key]:{...(c[key] ?? {title:'',description:''}),title:e.target.value}}))} className="admin-field" /></label><label className="admin-label">SEO description<textarea rows={2} value={seo[key]?.description ?? ''} onChange={(e) => setSeo((c) => ({...c,[key]:{...(c[key] ?? {title:'',description:''}),description:e.target.value}}))} className="admin-field" /></label></div></div>)}</div><button disabled={busy} type="button" onClick={() => void saveSeo()} className="admin-primary mt-6">{busy ? 'Saving…' : 'Save SEO settings'}</button></section>}
         {tab === 'appearance' && <section className="admin-panel mt-7"><h2 className="font-serif text-2xl text-[var(--text)]">Website colour palette</h2><p className="mt-2 text-sm text-[var(--muted)]">Choose one of three palettes. The header switch separately controls light and dark appearance.</p><div className="mt-6 grid gap-4 md:grid-cols-3">{([{id:'glacier',name:'Glacier',base:'#0b1626',surface:'#142b3b',accent:'#a28dff',description:'Midnight navy and violet'},{id:'aurora',name:'Aurora',base:'#101d2a',surface:'#1b3b43',accent:'#78d8ce',description:'Deep teal and icy mint'},{id:'ember',name:'Ember',base:'#211923',surface:'#3b2936',accent:'#f1bf79',description:'Plum and warm gold'}] as const).map((item) => <button key={item.id} type="button" onClick={() => void selectPalette(item.id)} aria-pressed={palette === item.id} className={palette === item.id ? 'palette-card is-selected' : 'palette-card'}><div className="flex gap-2"><span className="h-9 flex-1 rounded-lg" style={{background:item.base}}/><span className="h-9 flex-1 rounded-lg" style={{background:item.surface}}/><span className="h-9 w-9 rounded-lg" style={{background:item.accent}}/></div><p className="mt-4 font-semibold text-[var(--text)]">{item.name}</p><p className="mt-1 text-xs text-[var(--muted)]">{item.description}</p>{palette === item.id && <p className="mt-3 text-xs font-semibold text-[var(--accent)]">Currently selected</p>}</button>)}</div></section>}
