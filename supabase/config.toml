@@ -1,0 +1,2 @@
+[functions.email-verification-handoff]
+verify_jwt = false

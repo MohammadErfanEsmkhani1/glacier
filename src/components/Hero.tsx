@@ -1,82 +1,165 @@
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import LoopingVideo from './LoopingVideo'
-
+import { useSectionCopy, useSectionCopyReady } from '../lib/siteStorage'
 export default function Hero() {
-  return (
-    <section id="home" className="relative flex min-h-[100svh] w-full flex-col overflow-hidden bg-[#0b1626]">
-      <LoopingVideo src="/hero.mp4" />
+  const heroVideoRef = useRef<HTMLVideoElement>(null)
+  const heroVideoNextRef = useRef<HTMLVideoElement>(null)
 
+  useEffect(() => {
+    const video = heroVideoRef.current
+    const nextVideo = heroVideoNextRef.current
+    if (!video || !nextVideo) return
+
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
+    if (motionPreference.matches || connection?.saveData) return
+
+    let disposed = false
+    let sourceAttached = false
+    let idleHandle: number | null = null
+    let fallbackHandle: number | null = null
+    let observer: IntersectionObserver | null = null
+    let activeVideo = video
+    let standbyVideo = nextVideo
+    let transitionStarted = false
+    const fadeDuration = 1.6
+
+    const onTimeUpdate = (event: Event) => {
+      const current = event.currentTarget as HTMLVideoElement
+      if (disposed || current !== activeVideo || transitionStarted || !Number.isFinite(current.duration)) return
+      if (current.duration - current.currentTime <= fadeDuration) {
+        transitionStarted = true
+        standbyVideo.currentTime = 0
+        void standbyVideo.play().catch(() => {
+          standbyVideo.style.opacity = '0'
+          activeVideo.style.opacity = '1'
+          transitionStarted = false
+        })
+        standbyVideo.style.opacity = '1'
+        activeVideo.style.opacity = '0'
+      }
+    }
+
+    const onEnded = (event: Event) => {
+      if (disposed || event.currentTarget !== activeVideo) return
+      if (transitionStarted) {
+        activeVideo.pause()
+        activeVideo.style.opacity = '0'
+        standbyVideo.style.opacity = '1'
+        const previousVideo = activeVideo
+        activeVideo = standbyVideo
+        standbyVideo = previousVideo
+        standbyVideo.currentTime = 0
+      } else {
+        activeVideo.currentTime = 0
+        void activeVideo.play().catch(() => {
+          // Keep the poster visible if playback is unavailable.
+        })
+      }
+      transitionStarted = false
+    }
+
+    video.addEventListener('timeupdate', onTimeUpdate)
+    nextVideo.addEventListener('timeupdate', onTimeUpdate)
+    video.addEventListener('ended', onEnded)
+    nextVideo.addEventListener('ended', onEnded)
+
+    const attachAndPlay = () => {
+      if (disposed || sourceAttached) return
+      sourceAttached = true
+      video.src = '/hero2.mp4'
+      nextVideo.src = '/hero2.mp4'
+      video.load()
+      nextVideo.load()
+      void video.play().catch(() => {
+        // Keep the poster visible if autoplay is unavailable.
+      })
+    }
+
+    const scheduleLoad = () => {
+      const idleWindow = window as Window & {
+        requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
+        cancelIdleCallback?: (handle: number) => void
+      }
+      if (idleWindow.requestIdleCallback) {
+        idleHandle = idleWindow.requestIdleCallback(attachAndPlay, { timeout: 1800 })
+      } else {
+        fallbackHandle = window.setTimeout(attachAndPlay, 650)
+      }
+    }
+
+    if ('IntersectionObserver' in window) {
+      observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          observer?.disconnect()
+          scheduleLoad()
+        }
+      }, { rootMargin: '180px 0px' })
+      observer.observe(video)
+    } else {
+      scheduleLoad()
+    }
+
+    return () => {
+      disposed = true
+      observer?.disconnect()
+      video.removeEventListener('timeupdate', onTimeUpdate)
+      nextVideo.removeEventListener('timeupdate', onTimeUpdate)
+      video.removeEventListener('ended', onEnded)
+      nextVideo.removeEventListener('ended', onEnded)
+      video.pause()
+      nextVideo.pause()
+      const idleWindow = window as Window & {
+        cancelIdleCallback?: (handle: number) => void
+      }
+      if (idleHandle !== null) idleWindow.cancelIdleCallback?.(idleHandle)
+      if (fallbackHandle !== null) window.clearTimeout(fallbackHandle)
+    }
+  }, [])
+
+  const copy = useSectionCopy('homeHero')
+  const copyReady = useSectionCopyReady('homeHero')
+  return (
+    <section id="home" data-preloader-pending={copyReady ? undefined : 'true'} className="relative flex min-h-[100svh] w-full flex-col overflow-hidden bg-[var(--page)]">
+      <video
+        ref={heroVideoRef}
+        className="hero-video-layer hero-video-layer-active pointer-events-none absolute inset-0 h-full w-full object-cover"
+        muted
+        playsInline
+        preload="none"
+        poster="/images/hero-poster.svg"
+        aria-hidden="true"
+        tabIndex={-1}
+      />
+      <video
+        ref={heroVideoNextRef}
+        className="hero-video-layer hero-video-layer-next pointer-events-none absolute inset-0 h-full w-full object-cover"
+        muted
+        playsInline
+        preload="none"
+        aria-hidden="true"
+        tabIndex={-1}
+      />
+      <div className="hero-atmosphere absolute inset-0" aria-hidden="true">
+        <div className="hero-atmosphere-clouds" />
+      </div>
+      <div aria-hidden="true" className="hero-theme-overlay pointer-events-none absolute inset-0" />
       <div aria-hidden="true" className="absolute inset-0 bg-black/25" />
       <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,.28)_0%,transparent_24%,transparent_61%,rgba(0,0,0,.48)_100%)]" />
       <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,.18)_0%,transparent_20%,transparent_80%,rgba(0,0,0,.18)_100%)]" />
-      <div aria-hidden="true" className="pointer-events-none absolute -top-[14%] left-1/2 h-[720px] w-[1000px] -translate-x-1/2 bg-[radial-gradient(ellipse_at_50%_30%,rgba(120,216,206,.10)_0%,transparent_68%)]" />
-
       <div className="relative z-10 flex min-h-[100svh] flex-1 flex-col items-center justify-center px-6 pb-28 pt-32 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.1, ease: 'easeOut' }}
-          className="mb-7 flex flex-col items-center gap-3"
-        >
-          <div className="flex items-center gap-3">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M12 2 L20 9 L12 22 L4 9 Z" stroke="#fff" strokeWidth="1.3" strokeLinejoin="round" />
-              <path d="M4 9 H20 M12 2 V22 M8 9 L12 22 L16 9" stroke="#fff" strokeWidth="0.7" opacity="0.6" />
-            </svg>
-            <span className="pl-[0.28em] font-sans text-sm font-medium uppercase tracking-[0.3em] text-white">Glacier</span>
-          </div>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1, ease: 'easeOut' }} className="mb-7 flex flex-col items-center gap-3">
+          <div className="flex items-center gap-3"><span className="text-2xl text-white">◇</span><span className="pl-[0.28em] font-sans text-sm font-medium uppercase tracking-[0.3em] text-white">Glacier</span></div>
           <span className="pl-[0.24em] text-[10px] font-medium uppercase tracking-[0.32em] text-white/75">Movies · Series · Discovery</span>
         </motion.div>
-
-        <motion.h1
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.85, delay: 0.24, ease: 'easeOut' }}
-          className="max-w-5xl font-serif text-5xl font-normal uppercase leading-[1.02] tracking-[0.015em] text-white drop-shadow-[0_2px_32px_rgba(0,0,0,.45)] sm:text-6xl md:text-7xl lg:text-8xl"
-        >
-          Find a story
-          <span className="mt-2 block bg-gradient-to-r from-[#78d8ce] via-[#b6a5ff] to-[#f1bf79] bg-clip-text font-semibold text-transparent">
-            worth staying for.
-          </span>
+        <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.85, delay: 0.24, ease: 'easeOut' }} className="hero-title max-w-5xl font-serif text-5xl font-semibold uppercase leading-[1.06] tracking-[0.015em] drop-shadow-[0_2px_32px_rgba(0,0,0,.45)] sm:text-6xl md:text-7xl lg:text-8xl">
+          {copy.title}
         </motion.h1>
-
-        <motion.p
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.42, ease: 'easeOut' }}
-          className="mt-7 max-w-2xl font-serif text-base italic leading-relaxed text-white/90 drop-shadow-[0_1px_18px_rgba(0,0,0,.55)] md:text-lg"
-        >
-          Discover remarkable movies and series, find your next favourite, and keep the stories you love close.
-        </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.58, ease: 'easeOut' }}
-          className="mt-10 flex flex-wrap items-center justify-center gap-3"
-        >
-          <a
-            href="#exhibit"
-            className="glacier-focus inline-flex items-center rounded-full bg-[#a28dff] px-6 py-3.5 text-sm font-semibold text-[#111628] shadow-[0_10px_35px_rgba(162,141,255,.28)] transition duration-200 hover:-translate-y-0.5 hover:bg-[#b5a5ff]"
-          >
-            Explore recommendations
-          </a>
-          <a
-            href="#visit"
-            className="glacier-focus inline-flex items-center gap-3 rounded-full border border-white/35 bg-white/[0.07] px-6 py-3.5 text-sm font-medium text-white backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-[#78d8ce]/70 hover:bg-white/[0.13]"
-          >
-            My movies
-          </a>
+        <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.42, ease: 'easeOut' }} className="mt-7 max-w-2xl font-serif text-base italic leading-relaxed text-white/90 drop-shadow-[0_1px_18px_rgba(0,0,0,.55)] md:text-lg">{copy.description}</motion.p>
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.58, ease: 'easeOut' }} className="mt-10 flex flex-wrap items-center justify-center gap-3">
+          <a href="/categories" className="hero-primary-cta glacier-focus inline-flex items-center rounded-full px-6 py-3.5 text-sm font-semibold text-[#111628] transition duration-200 hover:-translate-y-0.5">Explore categories</a>
         </motion.div>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.82 }}
-          className="mt-12 text-[10px] font-medium uppercase tracking-[0.22em] text-white/65"
-        >
-          A little less scrolling. A lot more discovering.
-        </motion.p>
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.82 }} className="mt-12 text-[10px] font-medium uppercase tracking-[0.22em] text-white/65">A little less scrolling. A lot more discovering.</motion.p>
       </div>
     </section>
   )
