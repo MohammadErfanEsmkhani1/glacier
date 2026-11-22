@@ -12,14 +12,12 @@ type DownloadQuality = '360p' | '480p' | '720p' | '1080p'
 const downloadQualities: {
   value: DownloadQuality
   name: string
-  detail: string
-  description: string
   recommended?: boolean
 }[] = [
-  { value: '360p', name: 'Data saver', detail: '640 × 360', description: 'A lighter option for smaller screens and limited bandwidth.' },
-  { value: '480p', name: 'Standard', detail: '854 × 480', description: 'A comfortable everyday viewing experience.' },
-  { value: '720p', name: 'High definition', detail: '1280 × 720', description: 'Crisp detail with a balanced picture size.', recommended: true },
-  { value: '1080p', name: 'Full HD', detail: '1920 × 1080', description: 'The sharpest picture quality in this selection.' },
+  { value: '360p', name: 'Low' },
+  { value: '480p', name: 'SD' },
+  { value: '720p', name: 'HD', recommended: true },
+  { value: '1080p', name: 'Full HD' },
 ]
 
 function getSafeReturnPath() {
@@ -176,9 +174,7 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
                             <span className="download-quality-radio" aria-hidden="true" />
                           )}
                         </span>
-                        <span className="download-quality-detail">{quality.detail}</span>
                         <span className="download-quality-name">{quality.name}</span>
-                        <span className="download-quality-description">{quality.description}</span>
                         {quality.recommended && <span className="download-recommended">RECOMMENDED</span>}
                       </button>
                     )
@@ -194,7 +190,7 @@ export default function TitlePage({ titleId, titleSlug }: TitlePageProps) {
                     <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
                       <path d="M10 2.75v9.5m0 0 3.5-3.5M10 12.25l-3.5-3.5M3.25 13.5v2.25c0 .55.45 1 1 1h11.5c.55 0 1-.45 1-1V13.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                    Download {selectedQuality}
+                    Download
                   </button>
                 </div>
                 {downloadNotice && (
